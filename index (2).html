@@ -1,0 +1,48 @@
+# Tipping Platform – Deployment Guide
+
+## What this app does
+- Workers are onboarded by employers and assigned a QR code
+- Customers scan the QR code and pay a tip via Paystack
+- Admins can see all tips in the dashboard
+
+---
+
+## How to deploy (step by step)
+
+### 1. Push code to GitHub
+1. Go to https://github.com and create a new repository (name it `tipping-platform`)
+2. Upload all these files to it (drag and drop, or use GitHub Desktop)
+
+### 2. Deploy on Render (free)
+1. Go to https://render.com and sign up / log in
+2. Click **"New +"** → **"Web Service"**
+3. Connect your GitHub account and select the `tipping-platform` repo
+4. Render will auto-detect the settings from `render.yaml`
+5. Add these **Environment Variables** in the Render dashboard:
+   - `PAYSTACK_SECRET_KEY` = `sk_test_f7235d011d6013ef022856f048683ef0fcb3dc2c`
+   - `VITE_PAYSTACK_PUBLIC_KEY` = `pk_test_ad02321f13b0918a39b44bffd6602294f4a82cf0`
+   - `NODE_ENV` = `production`
+6. Click **"Create Web Service"**
+7. Wait ~3 minutes for the build to complete
+8. Your live URL will appear at the top (e.g. `https://tipping-platform.onrender.com`)
+
+### 3. Update Firestore rules
+1. Go to https://console.firebase.google.com
+2. Select project `gen-lang-client-0767642075`
+3. Go to **Firestore Database** → **Rules**
+4. Copy and paste the contents of `firestore.rules` from this project
+5. Click **Publish**
+
+### 4. Test the flow
+1. Log in as an employer at your live URL
+2. Add a worker → a QR code will be generated
+3. Scan the QR code on your phone
+4. Complete a tip payment using Paystack test card: `4084084084084081`, expiry `01/99`, CVV `408`
+
+---
+
+## Going live with real payments
+When ready to accept real money:
+1. Complete Paystack KYC at https://dashboard.paystack.com
+2. Replace the test keys with your live keys (`sk_live_...` and `pk_live_...`) in Render's environment variables
+3. Redeploy
