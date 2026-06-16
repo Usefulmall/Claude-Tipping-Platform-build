@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: tipping-platform
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: VITE_PAYSTACK_PUBLIC_KEY
+        sync: false
