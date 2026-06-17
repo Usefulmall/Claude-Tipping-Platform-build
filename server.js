@@ -148,7 +148,9 @@ app.get("/api/health", (_req, res) => {
 });
 
 // ─── Serve built React frontend ────────────────────────────────────────────────
-const distPath = path.join(__dirname, "dist");
+// NOTE: this file is copied into dist/server.mjs during build, so __dirname
+// at runtime IS the dist folder itself — index.html sits right next to it.
+const distPath = __dirname;
 app.use(express.static(distPath));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(distPath, "index.html"));
