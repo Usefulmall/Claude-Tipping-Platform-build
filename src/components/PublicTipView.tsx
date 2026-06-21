@@ -113,22 +113,18 @@ export default function PublicTipView({ workerId }: Props) {
           { display_name: "Tipper", variable_name: "customer_name", value: customerName || "Anonymous" },
         ],
       },
-      callback: async (response: any) => {
-        // Payment succeeded — update Firestore
-        try {
-          await updateDoc(doc(db, "tips", refId), {
-            status: "success",
-            reference: response.reference,
-          });
-        } catch {}
+      callback: function (response: any) {
+        // Payment succeeded — update Firestore (fire and forget)
+        updateDoc(doc(db, "tips", refId), {
+          status: "success",
+          reference: response.reference,
+        }).catch(() => {});
         setSuccess(true);
         setPaying(false);
       },
-      onClose: async () => {
-        // Customer closed the popup — mark as failed
-        try {
-          await updateDoc(doc(db, "tips", refId), { status: "failed" });
-        } catch {}
+      onClose: function () {
+        // Customer closed the popup — mark as failed (fire and forget)
+        updateDoc(doc(db, "tips", refId), { status: "failed" }).catch(() => {});
         setPaying(false);
       },
     });
