@@ -8,10 +8,12 @@ import EmployerDashboard from "./components/EmployerDashboard";
 import PublicTipView from "./components/PublicTipView";
 import PublicWorkerOnboard from "./components/PublicWorkerOnboard";
 import LoginPage from "./components/LoginPage";
+import LandingPage from "./components/LandingPage";
 
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
 
   // Parse URL params to detect QR-code scans and onboarding links
   const params = new URLSearchParams(window.location.search);
@@ -57,13 +59,20 @@ export default function App() {
   }
 
   // ── Authenticated routes ────────────────────────────────────────────────────
-  if (!user) return <LoginPage />;
-  if (user.role === "admin") return <AdminDashboard user={user} />;
-  if (user.role === "employer") return <EmployerDashboard user={user} />;
+  if (user) {
+    if (user.role === "admin") return <AdminDashboard user={user} />;
+    if (user.role === "employer") return <EmployerDashboard user={user} />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Unknown account role. Please contact support.</p>
+      </div>
+    );
+  }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <p className="text-gray-500">Unknown account role. Please contact support.</p>
-    </div>
-  );
+  // ── Not signed in: show the landing page first, then the login screen ──────
+  if (!showLogin) {
+    return <LandingPage onGetStarted={() => setShowLogin(true)} />;
+  }
+
+  return <LoginPage />;
 }
