@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "vite build && cp server.js dist/server.mjs",
+    "build": "vite build && cp server.js dist/server.mjs && cp firebase-applet-config.json dist/firebase-applet-config.json",
     "start": "NODE_ENV=production node dist/server.mjs"
   },
   "dependencies": {

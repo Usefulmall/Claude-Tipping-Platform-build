@@ -4,6 +4,8 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import https from "https";
+import crypto from "crypto";
+import { readFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +13,131 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Reuse the existing public Firebase client config (already in the repo,
+// already safe to read — it's not a secret) so we don't need new env vars
+// for the project ID / Firestore database ID.
+const firebaseConfig = JSON.parse(
+  readFileSync(path.join(__dirname, "firebase-applet-config.json"), "utf8")
+);
+
 app.use(cors());
+
+// ─── Firestore REST helper (no Firebase Admin SDK needed) ─────────────────────
+// Uses the same public, rules-protected REST endpoint the browser SDK talks to.
+// This works here because firestore.rules allows unauthenticated tip *updates*
+// as long as the document shape passes isValidTip() — the same trust model the
+// browser already relies on in PublicTipView.tsx.
+function firestoreUpdateTip(projectId, databaseId, tipId, fields) {
+  return new Promise((resolve, reject) => {
+    // Firestore REST PATCH with updateMask — only touches the fields we send.
+    const maskParams = Object.keys(fields).map((k) => `updateMask.fieldPaths=${k}`).join("&");
+    const urlPath = `/v1/projects/${projectId}/databases/${databaseId}/documents/tips/${tipId}?${maskParams}`;
+    const body = JSON.stringify({
+      fields: toFirestoreFields(fields),
+    });
+    const options = {
+      hostname: "firestore.googleapis.com",
+      port: 443,
+      path: urlPath,
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    };
+    const req = https.request(options, (res) => {
+      let raw = "";
+      res.on("data", (c) => (raw += c));
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(JSON.parse(raw));
+        } else {
+          reject(new Error(`Firestore update failed (${res.statusCode}): ${raw}`));
+        }
+      });
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+// Converts a simple JS object into Firestore's typed REST field format.
+function toFirestoreFields(obj) {
+  const out = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "string") out[key] = { stringValue: value };
+    else if (typeof value === "number") out[key] = { doubleValue: value };
+    else if (typeof value === "boolean") out[key] = { booleanValue: value };
+    else out[key] = { stringValue: String(value) };
+  }
+  return out;
+}
+
+// ─── Paystack webhook ──────────────────────────────────────────────────────────
+// IMPORTANT: this route is registered BEFORE express.json() below, and uses
+// express.raw() itself, so we can verify the HMAC signature against the exact
+// raw bytes Paystack sent. If the body were already parsed/re-serialized by
+// express.json(), the signature check would fail (Paystack signs the raw body).
+app.post(
+  "/api/paystack/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const secret = process.env.PAYSTACK_SECRET_KEY || "";
+    const signature = req.headers["x-paystack-signature"];
+
+    if (!secret || !signature) {
+      console.warn("[Webhook] Missing secret or signature header");
+      return res.sendStatus(400);
+    }
+
+    const expectedHash = crypto.createHmac("sha512", secret).update(req.body).digest("hex");
+    if (expectedHash !== signature) {
+      console.warn("[Webhook] Signature mismatch — rejecting (not from Paystack)");
+      return res.sendStatus(401);
+    }
+
+    // Acknowledge receipt immediately — Paystack expects a fast 200 OK.
+    res.sendStatus(200);
+
+    let event;
+    try {
+      event = JSON.parse(req.body.toString("utf8"));
+    } catch (err) {
+      console.error("[Webhook] Could not parse event JSON:", err.message);
+      return;
+    }
+
+    const { event: eventType, data } = event || {};
+    const reference = data?.reference;
+    if (!reference) {
+      console.warn("[Webhook] Event missing reference, skipping:", eventType);
+      return;
+    }
+
+    const projectId = firebaseConfig.projectId;
+    const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
+    if (!projectId) {
+      console.error("[Webhook] Could not read projectId from firebase-applet-config.json");
+      return;
+    }
+
+    try {
+      if (eventType === "charge.success") {
+        await firestoreUpdateTip(projectId, databaseId, reference, { status: "success" });
+        console.log(`[Webhook] Tip ${reference} confirmed success via webhook`);
+      } else if (eventType === "charge.failed") {
+        await firestoreUpdateTip(projectId, databaseId, reference, { status: "failed" });
+        console.log(`[Webhook] Tip ${reference} marked failed via webhook`);
+      } else {
+        console.log(`[Webhook] Ignoring unrelated event type: ${eventType}`);
+      }
+    } catch (err) {
+      console.error("[Webhook] Firestore update error:", err.message);
+    }
+  }
+);
+
 app.use(express.json());
 
 // ─── Paystack API helper ───────────────────────────────────────────────────────
