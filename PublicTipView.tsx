@@ -57,8 +57,8 @@ export default function PublicTipView({ workerId }: Props) {
       setErrorMsg("Minimum tip is R5.");
       return;
     }
-    if (!customerEmail || !customerEmail.includes("@")) {
-      setErrorMsg("Please enter a valid email address.");
+    if (customerEmail && !customerEmail.includes("@")) {
+      setErrorMsg("That doesn't look like a valid email address.");
       return;
     }
     if (!worker) return;
@@ -74,6 +74,12 @@ export default function PublicTipView({ workerId }: Props) {
     setPaying(true);
     const refId = `tip_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
+    // Paystack requires an email to process any charge, but we don't want to
+    // force the tipper to provide one — they have their own bank/card receipt
+    // as proof of payment. If they skip it, generate a placeholder tied to
+    // this specific transaction so it's still unique and traceable on our side.
+    const emailForPaystack = customerEmail || `${refId}@tipme.noemail`;
+
     // Save pending tip to Firestore before payment
     const pendingTip: Tip = {
       id: refId,
@@ -85,7 +91,7 @@ export default function PublicTipView({ workerId }: Props) {
       workerAmount,
       status: "pending",
       reference: refId,
-      customerEmail,
+      customerEmail: emailForPaystack,
       createdAt: new Date().toISOString(),
       ...(customerName ? { customerName } : {}),
     };
@@ -101,7 +107,7 @@ export default function PublicTipView({ workerId }: Props) {
     // Launch Paystack popup
     const handler = window.PaystackPop.setup({
       key: publicKey,
-      email: customerEmail,
+      email: emailForPaystack,
       amount: Math.round(finalAmount * 100), // Paystack uses kobo/cents
       currency: "ZAR",
       ref: refId,
@@ -234,7 +240,7 @@ export default function PublicTipView({ workerId }: Props) {
           />
           <input
             type="email"
-            placeholder="Your email (for receipt) *"
+            placeholder="Your email (optional, for a receipt)"
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
