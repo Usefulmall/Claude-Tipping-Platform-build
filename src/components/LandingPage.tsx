@@ -54,9 +54,9 @@ export default function LandingPage({ onGetStarted }: Props) {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       {/* Top bar */}
       <header className="bg-white/70 backdrop-blur border-b border-gray-100 px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">💸</span>
-          <span className="font-bold text-gray-800">TipMe Platform</span>
+        <div className="flex items-center gap-3">
+          <span className="text-5xl">💸</span>
+          <span className="font-bold text-gray-800 text-2xl">TipMe Platform</span>
         </div>
         <button
           onClick={onGetStarted}
@@ -68,7 +68,7 @@ export default function LandingPage({ onGetStarted }: Props) {
 
       {/* Hero */}
       <section className="text-center px-4 pt-16 pb-14 max-w-2xl mx-auto">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+        <h1 className="text-4xl sm:text-6xl font-bold text-gray-800 mb-4">
           Digital Tipping Made Simple
         </h1>
         <p className="text-gray-600 mb-8">

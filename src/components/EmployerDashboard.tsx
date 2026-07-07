@@ -17,6 +17,7 @@ export default function EmployerDashboard({ user }: Props) {
   // Add worker form state
   const [wName, setWName] = useState("");
   const [wPosition, setWPosition] = useState("");
+  const [wPhone, setWPhone] = useState("");
   const [wBankCode, setWBankCode] = useState("");
   const [wBankName, setWBankName] = useState("");
   const [wAccount, setWAccount] = useState("");
@@ -53,7 +54,7 @@ export default function EmployerDashboard({ user }: Props) {
   }, [user.uid]);
 
   async function handleAddWorker() {
-    if (!wName || !wPosition || !wBankCode || !wAccount) {
+    if (!wName || !wPosition || !wPhone || !wBankCode || !wAccount) {
       setFormError("Please complete all fields.");
       return;
     }
@@ -75,6 +76,7 @@ export default function EmployerDashboard({ user }: Props) {
         employerId: user.uid,
         name: wName,
         position: wPosition,
+        phone: wPhone,
         bankName: wBankName,
         bankCode: wBankCode,
         accountNumber: wAccount,
@@ -83,7 +85,7 @@ export default function EmployerDashboard({ user }: Props) {
         createdAt: new Date().toISOString(),
       });
       setFormSuccess(`${wName} has been added!`);
-      setWName(""); setWPosition(""); setWBankCode(""); setWBankName("");
+      setWName(""); setWPosition(""); setWPhone(""); setWBankCode(""); setWBankName("");
       setWAccount("");
       setTab("workers");
     } catch (e: any) {
@@ -232,6 +234,13 @@ export default function EmployerDashboard({ user }: Props) {
               <input type="text" value={wPosition} onChange={(e) => setWPosition(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="Waitress, Valet, Housekeeper…" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input type="tel" value={wPhone} onChange={(e) => setWPhone(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="082 123 4567" />
+              <p className="text-xs text-gray-400 mt-1">We'll text this number when a tip is received.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>

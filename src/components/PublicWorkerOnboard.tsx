@@ -15,6 +15,7 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
+  const [phone, setPhone] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -30,7 +31,7 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
   }, []);
 
   async function handleSubmit() {
-    if (!name || !position || !bankCode || !accountNumber) {
+    if (!name || !position || !phone || !bankCode || !accountNumber) {
       setError("Please complete all fields.");
       return;
     }
@@ -52,6 +53,7 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
         employerId,
         name,
         position,
+        phone,
         bankName,
         bankCode,
         accountNumber,
@@ -117,6 +119,18 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
               placeholder="Waitress, Valet, Housekeeper…"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              placeholder="082 123 4567"
+            />
+            <p className="text-xs text-gray-400 mt-1">We'll text this number when you receive a tip.</p>
           </div>
 
           <div>
