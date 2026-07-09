@@ -90,10 +90,7 @@ export default function LandingPage({ onGetStarted }: Props) {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
-            >
+            <div key={f.title} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
               <div className="text-2xl mb-2">{f.icon}</div>
               <h3 className="font-semibold text-gray-800 text-sm mb-1">{f.title}</h3>
               <p className="text-xs text-gray-500">{f.description}</p>
@@ -110,9 +107,7 @@ export default function LandingPage({ onGetStarted }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {STEPS.map((s, i) => (
             <div key={s.number} className="text-center">
-              <div
-                className={`w-12 h-12 ${STEP_COLORS[i].bg} ${STEP_COLORS[i].text} rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3`}
-              >
+              <div className={`w-12 h-12 ${STEP_COLORS[i].bg} ${STEP_COLORS[i].text} rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3`}>
                 {s.number}
               </div>
               <h3 className="font-semibold text-gray-800 text-sm mb-1">{s.title}</h3>

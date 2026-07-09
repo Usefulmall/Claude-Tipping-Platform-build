@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Worker, Tip } from "../types";
 
-interface Props {
-  workerId: string;
-}
+interface Props { workerId: string; }
 
 const TIP_AMOUNTS = [10, 20, 50, 100, 200];
 const PLATFORM_FEE_PERCENT = 0.08; // 8% — must match percentage_charge in server.js
-
-declare global {
-  interface Window { PaystackPop: any; }
-}
 
 export default function PublicTipView({ workerId }: Props) {
   const [worker, setWorker] = useState<Worker | null>(null);
@@ -21,13 +15,10 @@ export default function PublicTipView({ workerId }: Props) {
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [paying, setPaying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const publicKey = (import.meta as any).env.VITE_PAYSTACK_PUBLIC_KEY || "";
 
   useEffect(() => {
     async function load() {
@@ -38,7 +29,7 @@ export default function PublicTipView({ workerId }: Props) {
         } else {
           setNotFound(true);
         }
-      } catch (e) {
+      } catch {
         setNotFound(true);
       } finally {
         setLoading(false);
@@ -57,30 +48,16 @@ export default function PublicTipView({ workerId }: Props) {
       setErrorMsg("Minimum tip is R5.");
       return;
     }
-    if (customerEmail && !customerEmail.includes("@")) {
-      setErrorMsg("That doesn't look like a valid email address.");
-      return;
-    }
     if (!worker) return;
-
-    const hasRealKey = publicKey && publicKey !== "" && !publicKey.startsWith("pk_test_xxx");
-    const paystackReady = typeof window.PaystackPop !== "undefined";
-
-    if (!hasRealKey || !paystackReady) {
-      setErrorMsg("Paystack is not configured. Please contact the administrator.");
-      return;
-    }
 
     setPaying(true);
     const refId = `tip_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
-    // Paystack requires an email to process any charge, but we don't want to
-    // force the tipper to provide one — they have their own bank/card receipt
-    // as proof of payment. If they skip it, generate a placeholder tied to
-    // this specific transaction so it's still unique and traceable on our side.
-    const emailForPaystack = customerEmail || `${refId}@tipme.noemail`;
+    // Generate a placeholder email for Paystack's internal requirement.
+    // The tipper never sees or enters this — it's handled entirely server-side.
+    const emailForPaystack = `${refId}@tipme.noemail`;
 
-    // Save pending tip to Firestore before payment
+    // Save pending tip to Firestore before initiating payment
     const pendingTip: Tip = {
       id: refId,
       workerId: worker.id,
@@ -98,47 +75,51 @@ export default function PublicTipView({ workerId }: Props) {
 
     try {
       await setDoc(doc(db, "tips", refId), pendingTip);
-    } catch (e: any) {
+    } catch {
       setErrorMsg("Could not initiate payment. Please try again.");
       setPaying(false);
       return;
     }
 
-    // Launch Paystack popup
-    const handler = window.PaystackPop.setup({
-      key: publicKey,
-      email: emailForPaystack,
-      amount: Math.round(finalAmount * 100), // Paystack uses kobo/cents
-      currency: "ZAR",
-      ref: refId,
-      subaccount: worker.subaccountCode,
-      bearer: "subaccount", // worker's share bears the Paystack processing fee
-      metadata: {
-        custom_fields: [
-          { display_name: "Worker", variable_name: "worker_name", value: worker.name },
-          { display_name: "Tipper", variable_name: "customer_name", value: customerName || "Anonymous" },
-        ],
-      },
-      callback: function (response: any) {
-        // Payment succeeded — update Firestore (fire and forget)
-        updateDoc(doc(db, "tips", refId), {
-          status: "success",
-          reference: response.reference,
-        }).catch(() => {});
-        setSuccess(true);
-        setPaying(false);
-      },
-      onClose: function () {
-        // Customer closed the popup — mark as failed (fire and forget)
-        updateDoc(doc(db, "tips", refId), { status: "failed" }).catch(() => {});
-        setPaying(false);
-      },
-    });
+    // Ask our server to initiate the Paystack charge via EFT (Ozow).
+    // The server holds the secret key and calls Paystack's Charge API.
+    // Paystack returns an authorization URL we redirect the tipper to.
+    try {
+      const res = await fetch("/api/paystack/initiate-eft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference: refId,
+          amount: finalAmount,
+          email: emailForPaystack,
+          subaccountCode: worker.subaccountCode,
+          workerName: worker.name,
+          customerName: customerName || "Anonymous",
+          callbackUrl: `${window.location.origin}?payment=done&ref=${refId}&worker=${worker.id}`,
+        }),
+      });
+      const data = await res.json();
 
-    handler.openIframe();
+      if (data.status && data.authorization_url) {
+        // Redirect tipper to Paystack's EFT/Ozow page — they pay via banking app
+        window.location.href = data.authorization_url;
+      } else {
+        throw new Error(data.message || "Could not initiate payment.");
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || "Something went wrong. Please try again.");
+      setPaying(false);
+    }
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────────
+  // ── Check for payment return (tipper redirected back after paying) ───────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "done") {
+      setSuccess(true);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -159,7 +140,6 @@ export default function PublicTipView({ workerId }: Props) {
     );
   }
 
-  // ── Success state ────────────────────────────────────────────────────────────
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
@@ -167,11 +147,16 @@ export default function PublicTipView({ workerId }: Props) {
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-gray-800">Thank you!</h2>
           <p className="text-gray-500 mt-2">
-            Your tip of <span className="font-semibold text-green-600">R{finalAmount.toFixed(2)}</span> for{" "}
-            <span className="font-semibold">{worker.name}</span> was sent successfully.
+            Your tip for <span className="font-semibold">{worker.name}</span> was sent successfully.
           </p>
           <button
-            onClick={() => { setSuccess(false); setSelectedAmount(null); setCustomAmount(""); setCustomerEmail(""); setCustomerName(""); }}
+            onClick={() => {
+              setSuccess(false);
+              setSelectedAmount(null);
+              setCustomAmount("");
+              setCustomerName("");
+              window.history.replaceState({}, "", `?worker=${worker.id}`);
+            }}
             className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 rounded-xl transition"
           >
             Tip Again
@@ -181,11 +166,9 @@ export default function PublicTipView({ workerId }: Props) {
     );
   }
 
-  // ── Main tip form ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
             💚
@@ -194,12 +177,10 @@ export default function PublicTipView({ workerId }: Props) {
           <p className="text-sm text-gray-500">{worker.position}</p>
         </div>
 
-        {/* Amount selection */}
         <p className="text-sm font-medium text-gray-700 mb-2">Select an amount (ZAR)</p>
         <div className="grid grid-cols-5 gap-2 mb-3">
           {TIP_AMOUNTS.map((amt) => (
-            <button
-              key={amt}
+            <button key={amt}
               onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
               className={`py-2 rounded-lg text-sm font-semibold border transition ${
                 selectedAmount === amt
@@ -212,11 +193,8 @@ export default function PublicTipView({ workerId }: Props) {
           ))}
         </div>
 
-        <input
-          type="number"
-          placeholder="Or enter custom amount (R)"
-          value={customAmount}
-          min={5}
+        <input type="number" placeholder="Or enter custom amount (R)"
+          value={customAmount} min={5}
           onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 mb-4"
         />
@@ -229,39 +207,25 @@ export default function PublicTipView({ workerId }: Props) {
           </div>
         )}
 
-        {/* Customer details */}
-        <div className="space-y-3 mb-4">
-          <input
-            type="text"
-            placeholder="Your name (optional)"
+        <div className="mb-4">
+          <input type="text" placeholder="Your name (optional)"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-          <input
-            type="email"
-            placeholder="Your email (optional, for a receipt)"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
           />
         </div>
 
         {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-2 mb-3">
-            {errorMsg}
-          </div>
+          <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-2 mb-3">{errorMsg}</div>
         )}
 
-        <button
-          onClick={handlePay}
-          disabled={paying || !finalAmount}
+        <button onClick={handlePay} disabled={paying || !finalAmount}
           className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
         >
-          {paying ? "Opening payment…" : `Send Tip${finalAmount >= 5 ? ` · R${finalAmount.toFixed(2)}` : ""}`}
+          {paying ? "Opening payment…" : `Pay via Banking App${finalAmount >= 5 ? ` · R${finalAmount.toFixed(2)}` : ""}`}
         </button>
 
-        <p className="text-center text-xs text-gray-400 mt-3">Secured by Paystack 🔒</p>
+        <p className="text-center text-xs text-gray-400 mt-3">Secured by Paystack & Ozow 🔒</p>
       </div>
     </div>
   );

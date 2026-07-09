@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-interface Props {
-  employerId: string;
-}
-
-interface Bank {
-  name: string;
-  code: string;
-}
+interface Props { employerId: string; }
+interface Bank { name: string; code: string; }
 
 export default function PublicWorkerOnboard({ employerId }: Props) {
   const [banks, setBanks] = useState<Bank[]>([]);
@@ -93,79 +87,47 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3 mb-4">
-            {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3 mb-4">{error}</div>
         )}
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="Jane Smith"
-            />
+              placeholder="Jane Smith" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Job Position</label>
-            <input
-              type="text"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
+            <input type="text" value={position} onChange={(e) => setPosition(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="Waitress, Valet, Housekeeper…"
-            />
+              placeholder="Waitress, Valet, Housekeeper…" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="082 123 4567"
-            />
+              placeholder="082 123 4567" />
             <p className="text-xs text-gray-400 mt-1">We'll text this number when you receive a tip.</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
-            <select
-              value={bankCode}
-              onChange={(e) => {
-                setBankCode(e.target.value);
-                setBankName(banks.find((b) => b.code === e.target.value)?.name || "");
-              }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
+            <select value={bankCode} onChange={(e) => {
+              setBankCode(e.target.value);
+              setBankName(banks.find((b) => b.code === e.target.value)?.name || "");
+            }} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
               <option value="">Select your bank…</option>
-              {banks.map((b) => (
-                <option key={b.code} value={b.code}>{b.name}</option>
-              ))}
+              {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-            <input
-              type="text"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
+            <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="Your bank account number"
-            />
+              placeholder="Your bank account number" />
           </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition"
-          >
+          <button onClick={handleSubmit} disabled={submitting}
+            className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition">
             {submitting ? "Registering…" : "Complete Registration"}
           </button>
         </div>

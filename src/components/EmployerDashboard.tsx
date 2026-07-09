@@ -14,7 +14,6 @@ export default function EmployerDashboard({ user }: Props) {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [tab, setTab] = useState<"workers" | "tips" | "add">("workers");
 
-  // Add worker form state
   const [wName, setWName] = useState("");
   const [wPosition, setWPosition] = useState("");
   const [wPhone, setWPhone] = useState("");
@@ -28,7 +27,6 @@ export default function EmployerDashboard({ user }: Props) {
   const baseUrl = window.location.origin;
   const onboardLink = `${baseUrl}?onboard=${user.uid}`;
 
-  // Load banks
   useEffect(() => {
     fetch("/api/paystack/banks?currency=ZAR&country=south%20africa")
       .then((r) => r.json())
@@ -36,7 +34,6 @@ export default function EmployerDashboard({ user }: Props) {
       .catch(() => {});
   }, []);
 
-  // Real-time workers listener
   useEffect(() => {
     const q = query(collection(db, "workers"), where("employerId", "==", user.uid));
     return onSnapshot(q, (snap) => {
@@ -44,7 +41,6 @@ export default function EmployerDashboard({ user }: Props) {
     });
   }, [user.uid]);
 
-  // Real-time tips listener
   useEffect(() => {
     const q = query(collection(db, "tips"), where("employerId", "==", user.uid));
     return onSnapshot(q, (snap) => {
@@ -85,8 +81,7 @@ export default function EmployerDashboard({ user }: Props) {
         createdAt: new Date().toISOString(),
       });
       setFormSuccess(`${wName} has been added!`);
-      setWName(""); setWPosition(""); setWPhone(""); setWBankCode(""); setWBankName("");
-      setWAccount("");
+      setWName(""); setWPosition(""); setWPhone(""); setWBankCode(""); setWBankName(""); setWAccount("");
       setTab("workers");
     } catch (e: any) {
       setFormError(e.message || "Something went wrong.");
@@ -100,7 +95,6 @@ export default function EmployerDashboard({ user }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-800">💸 TipMe</h1>
@@ -111,7 +105,6 @@ export default function EmployerDashboard({ user }: Props) {
         </button>
       </header>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3 p-4">
         <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
           <p className="text-2xl font-bold text-green-600">{workers.length}</p>
@@ -127,7 +120,6 @@ export default function EmployerDashboard({ user }: Props) {
         </div>
       </div>
 
-      {/* Onboard link */}
       <div className="mx-4 mb-4 bg-green-50 border border-green-200 rounded-xl p-3">
         <p className="text-xs font-medium text-green-800 mb-1">Worker self-registration link</p>
         <div className="flex gap-2 items-center">
@@ -141,7 +133,6 @@ export default function EmployerDashboard({ user }: Props) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-gray-200 mx-4">
         {(["workers", "tips", "add"] as const).map((t) => (
           <button
@@ -157,7 +148,6 @@ export default function EmployerDashboard({ user }: Props) {
       </div>
 
       <div className="p-4">
-        {/* Workers Tab */}
         {tab === "workers" && (
           <div>
             {workers.length === 0 ? (
@@ -185,7 +175,6 @@ export default function EmployerDashboard({ user }: Props) {
           </div>
         )}
 
-        {/* Tips Tab */}
         {tab === "tips" && (
           <div className="space-y-3">
             {tips.length === 0 ? (
@@ -217,7 +206,6 @@ export default function EmployerDashboard({ user }: Props) {
           </div>
         )}
 
-        {/* Add Worker Tab */}
         {tab === "add" && (
           <div className="space-y-4 max-w-md">
             {formError && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">{formError}</div>}
@@ -254,8 +242,7 @@ export default function EmployerDashboard({ user }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-              <input type="text" value={wAccount}
-                onChange={(e) => setWAccount(e.target.value)}
+              <input type="text" value={wAccount} onChange={(e) => setWAccount(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="Account number" />
             </div>
