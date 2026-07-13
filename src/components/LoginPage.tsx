@@ -43,7 +43,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">💸</div>
+          <img src="/tipme-icon.png" alt="TipMe" className="w-16 h-16 object-contain mx-auto mb-2" />
           <h1 className="text-2xl font-bold text-gray-800">TipMe Platform</h1>
           <p className="text-gray-500 text-sm mt-1">
             {mode === "login" ? "Sign in to your account" : "Create a new account"}

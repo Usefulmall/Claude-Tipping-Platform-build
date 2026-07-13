@@ -32,7 +32,10 @@ export default function AdminDashboard({ user }: Props) {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-800">💸 TipMe Admin</h1>
+          <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <img src="/tipme-icon.png" alt="TipMe" className="w-6 h-6 object-contain" />
+            TipMe Admin
+          </h1>
           <p className="text-xs text-gray-500">{user.name} · Administrator</p>
         </div>
         <button onClick={() => signOut(auth)} className="text-sm text-gray-500 hover:text-red-500">

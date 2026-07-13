@@ -55,7 +55,7 @@ export default function LandingPage({ onGetStarted }: Props) {
       {/* Top bar */}
       <header className="bg-white/70 backdrop-blur border-b border-gray-100 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-5xl">💸</span>
+          <img src="/tipme-icon.png" alt="TipMe" className="w-12 h-12 object-contain" />
           <span className="font-bold text-gray-800 text-2xl">TipMe Platform</span>
         </div>
         <button
@@ -117,14 +117,39 @@ export default function LandingPage({ onGetStarted }: Props) {
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="text-center px-4 pb-16">
-        <button
-          onClick={onGetStarted}
-          className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-xl transition shadow-md"
-        >
-          Get Started
-        </button>
+      {/* About */}
+      <section className="px-4 pb-16 max-w-3xl mx-auto">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-800 text-center mb-4">
+            About TipMe
+          </h2>
+          <p className="text-sm text-gray-600 leading-relaxed mb-3">
+            TipMe is sponsored by Sabraro Alpha (Pty) Ltd. In an increasingly cashless
+            society, service workers do not have a means to raise tips other than
+            turning to sites like this one.
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-3">
+            Sabraro Alpha can be contacted at{" "}
+            <a href="mailto:jolwage@yahoo.com" className="text-green-600 font-medium">
+              jolwage@yahoo.com
+            </a>
+            .
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-3">
+            Physical address: 997 De Swantje Close, Langebaan Country Estate,
+            Langebaan, Western Cape, South Africa.
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed mb-3">
+            WhatsApp:{" "}
+            <a href="https://wa.me/27843088317" className="text-green-600 font-medium">
+              +27 84 308 8317
+            </a>
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Should you or a customer experience any difficulty, or wish to have
+            faulty transactions reversed, please contact Johan Olwage at the above.
+          </p>
+        </div>
       </section>
     </div>
   );
