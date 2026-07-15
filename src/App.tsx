@@ -9,16 +9,16 @@ import PublicTipView from "./components/PublicTipView";
 import PublicWorkerOnboard from "./components/PublicWorkerOnboard";
 import LoginPage from "./components/LoginPage";
 import LandingPage from "./components/LandingPage";
+import TermsOfUse from "./components/TermsOfUse";
 
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
 
-  // Parse URL params to detect QR-code scans and onboarding links
   const params = new URLSearchParams(window.location.search);
   const workerIdParam = params.get("worker");
-  const onboardParam = params.get("onboard"); // employer onboard link
+  const onboardParam = params.get("onboard");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -37,6 +37,10 @@ export default function App() {
     return unsub;
   }, []);
 
+  if (window.location.pathname === "/terms") {
+    return <TermsOfUse onBack={() => (window.location.href = "/")} />;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -48,17 +52,9 @@ export default function App() {
     );
   }
 
-  // ── Public: QR code tip page (scanned by customer) ──────────────────────────
-  if (workerIdParam) {
-    return <PublicTipView workerId={workerIdParam} />;
-  }
+  if (workerIdParam) return <PublicTipView workerId={workerIdParam} />;
+  if (onboardParam) return <PublicWorkerOnboard employerId={onboardParam} />;
 
-  // ── Public: Worker self-onboarding link shared by employer ─────────────────
-  if (onboardParam) {
-    return <PublicWorkerOnboard employerId={onboardParam} />;
-  }
-
-  // ── Authenticated routes ────────────────────────────────────────────────────
   if (user) {
     if (user.role === "admin") return <AdminDashboard user={user} />;
     if (user.role === "employer") return <EmployerDashboard user={user} />;
@@ -69,10 +65,6 @@ export default function App() {
     );
   }
 
-  // ── Not signed in: show the landing page first, then the login screen ──────
-  if (!showLogin) {
-    return <LandingPage onGetStarted={() => setShowLogin(true)} />;
-  }
-
+  if (!showLogin) return <LandingPage onGetStarted={() => setShowLogin(true)} />;
   return <LoginPage />;
 }
