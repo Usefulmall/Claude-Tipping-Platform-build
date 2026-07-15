@@ -1,3 +1,6 @@
+import { useState } from "react";
+import TermsGateModal from "./TermsGateModal";
+
 interface Props {
   onGetStarted: () => void;
 }
@@ -50,8 +53,17 @@ const STEP_COLORS = [
 ];
 
 export default function LandingPage({ onGetStarted }: Props) {
+  const [showTerms, setShowTerms] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+      {showTerms && (
+        <TermsGateModal
+          onAgree={onGetStarted}
+          onCancel={() => setShowTerms(false)}
+        />
+      )}
+
       {/* Top bar */}
       <header className="bg-white/70 backdrop-blur border-b border-gray-100 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -59,7 +71,7 @@ export default function LandingPage({ onGetStarted }: Props) {
           <span className="font-bold text-gray-800 text-2xl">TipMe Platform</span>
         </div>
         <button
-          onClick={onGetStarted}
+          onClick={() => setShowTerms(true)}
           className="text-sm bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition"
         >
           Sign In / Register
@@ -76,7 +88,7 @@ export default function LandingPage({ onGetStarted }: Props) {
           and transparent — with automatic tracking for every tip.
         </p>
         <button
-          onClick={onGetStarted}
+          onClick={() => setShowTerms(true)}
           className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-xl transition shadow-md"
         >
           Get Started
@@ -151,6 +163,12 @@ export default function LandingPage({ onGetStarted }: Props) {
           </p>
         </div>
       </section>
+
+      <footer className="text-center px-4 pb-10">
+        <a href="/terms" className="text-xs text-gray-500 underline hover:text-gray-700">
+          Terms of Use
+        </a>
+      </footer>
     </div>
   );
 }
