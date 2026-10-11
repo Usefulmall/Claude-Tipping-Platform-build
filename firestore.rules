@@ -24,16 +24,12 @@ service cloud.firestore {
     }
 
     function isValidWorker(data) {
-      return data.keys().hasAll(['id', 'employerId', 'name', 'position', 'bankName', 'bankCode', 'accountNumber', 'accountName', 'subaccountCode', 'createdAt']) &&
+      return data.keys().hasAll(['id', 'employerId', 'name', 'position', 'phone', 'createdAt']) &&
              data.id is string &&
              data.employerId is string &&
              data.name is string && data.name.size() <= 100 &&
              data.position is string &&
-             data.bankName is string &&
-             data.bankCode is string &&
-             data.accountNumber is string &&
-             data.accountName is string &&
-             data.subaccountCode is string && data.subaccountCode.size() >= 4 &&
+             data.phone is string && data.phone.size() >= 9 &&
              data.createdAt is string;
     }
 
