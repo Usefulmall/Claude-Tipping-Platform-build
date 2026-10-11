@@ -13,9 +13,9 @@ export default function TermsGateModal({ onAgree, onCancel }: Props) {
       <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-lg">
         <h2 className="text-lg font-bold text-gray-800 mb-3">Before you continue</h2>
         <p className="text-sm text-gray-600 leading-relaxed mb-3">
-          TipMe is operated by Sabraro Alpha (Pty) Ltd. Tips are processed securely
-          through Paystack and paid directly to the Service Worker's bank account,
-          minus an 8% platform fee. Tips are generally final, though errors or
+          TipMe is operated by Sabraro Alpha (Pty) Ltd. Tips are paid directly from
+          the tipper to the Service Worker via PayShap — TipMe never holds or
+          processes tip money. Tips are generally final, though errors or
           unauthorised transactions can be reported for review.
         </p>
         <p className="text-sm text-gray-600 leading-relaxed mb-4">

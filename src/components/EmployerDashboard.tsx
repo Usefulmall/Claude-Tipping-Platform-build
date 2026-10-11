@@ -6,33 +6,21 @@ import { AppUser, Worker, Tip } from "../types";
 import QrCodeCard from "./QrCodeCard";
 
 interface Props { user: AppUser; }
-interface Bank { name: string; code: string; }
 
 export default function EmployerDashboard({ user }: Props) {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [tips, setTips] = useState<Tip[]>([]);
-  const [banks, setBanks] = useState<Bank[]>([]);
   const [tab, setTab] = useState<"workers" | "tips" | "add">("workers");
 
   const [wName, setWName] = useState("");
   const [wPosition, setWPosition] = useState("");
   const [wPhone, setWPhone] = useState("");
-  const [wBankCode, setWBankCode] = useState("");
-  const [wBankName, setWBankName] = useState("");
-  const [wAccount, setWAccount] = useState("");
   const [adding, setAdding] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
 
   const baseUrl = window.location.origin;
   const onboardLink = `${baseUrl}?onboard=${user.uid}`;
-
-  useEffect(() => {
-    fetch("/api/paystack/banks?currency=ZAR&country=south%20africa")
-      .then((r) => r.json())
-      .then((d) => { if (d.status && d.data) setBanks(d.data); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const q = query(collection(db, "workers"), where("employerId", "==", user.uid));
@@ -50,22 +38,13 @@ export default function EmployerDashboard({ user }: Props) {
   }, [user.uid]);
 
   async function handleAddWorker() {
-    if (!wName || !wPosition || !wPhone || !wBankCode || !wAccount) {
+    if (!wName || !wPosition || !wPhone) {
       setFormError("Please complete all fields.");
       return;
     }
     setAdding(true);
     setFormError("");
     try {
-      const subRes = await fetch("/api/paystack/create-subaccount", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName: wName, settlementBank: wBankCode, accountNumber: wAccount }),
-      });
-      const subData = await subRes.json();
-      if (!subData.status || !subData.data?.subaccount_code) {
-        throw new Error(subData.message || "Subaccount creation failed");
-      }
       const workerId = `worker_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       await setDoc(doc(db, "workers", workerId), {
         id: workerId,
@@ -73,15 +52,10 @@ export default function EmployerDashboard({ user }: Props) {
         name: wName,
         position: wPosition,
         phone: wPhone,
-        bankName: wBankName,
-        bankCode: wBankCode,
-        accountNumber: wAccount,
-        accountName: wName,
-        subaccountCode: subData.data.subaccount_code,
         createdAt: new Date().toISOString(),
       });
       setFormSuccess(`${wName} has been added!`);
-      setWName(""); setWPosition(""); setWPhone(""); setWBankCode(""); setWBankName(""); setWAccount("");
+      setWName(""); setWPosition(""); setWPhone("");
       setTab("workers");
     } catch (e: any) {
       setFormError(e.message || "Something went wrong.");
@@ -231,23 +205,9 @@ export default function EmployerDashboard({ user }: Props) {
               <input type="tel" value={wPhone} onChange={(e) => setWPhone(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="082 123 4567" />
-              <p className="text-xs text-gray-400 mt-1">We'll text this number when a tip is received.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
-              <select value={wBankCode} onChange={(e) => {
-                setWBankCode(e.target.value);
-                setWBankName(banks.find((b) => b.code === e.target.value)?.name || "");
-              }} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                <option value="">Select bank…</option>
-                {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-              <input type="text" value={wAccount} onChange={(e) => setWAccount(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-                placeholder="Account number" />
+              <p className="text-xs text-gray-400 mt-1">
+                Tippers pay the worker directly on this number via PayShap. Must be registered as their ShapID.
+              </p>
             </div>
 
             <button onClick={handleAddWorker} disabled={adding}

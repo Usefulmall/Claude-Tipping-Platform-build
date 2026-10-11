@@ -9,7 +9,7 @@ interface Props {
 export default function QrCodeCard({ worker, baseUrl }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
-  const tipUrl = `${baseUrl}?worker=${worker.id}&name=${encodeURIComponent(worker.name)}&sub=${encodeURIComponent(worker.subaccountCode)}`;
+  const tipUrl = `${baseUrl}?worker=${worker.id}&name=${encodeURIComponent(worker.name)}`;
 
   useEffect(() => {
     const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tipUrl)}`;

@@ -14,17 +14,17 @@ const FEATURES = [
   {
     icon: "⚡",
     title: "Instant Payouts",
-    description: "Tips are processed in real-time through Paystack, straight to the worker's bank account.",
+    description: "Tips go straight from the customer's banking app to the worker's own bank account via PayShap — no delay, no middleman.",
   },
   {
     icon: "🔒",
     title: "Secure & Safe",
-    description: "Bank-grade security with encrypted transactions and verified worker accounts.",
+    description: "Payments move bank-to-bank over PayShap. TipMe never holds or touches tip money.",
   },
   {
     icon: "👋",
     title: "Easy Onboarding",
-    description: "A simple form captures everything needed. Bank account setup happens automatically.",
+    description: "A simple form captures everything needed — just a name, position and cellphone number.",
   },
   {
     icon: "📊",

@@ -3,44 +3,23 @@ import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 interface Props { employerId: string; }
-interface Bank { name: string; code: string; }
 
 export default function PublicWorkerOnboard({ employerId }: Props) {
-  const [banks, setBanks] = useState<Bank[]>([]);
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const [phone, setPhone] = useState("");
-  const [bankCode, setBankCode] = useState("");
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetch("/api/paystack/banks?currency=ZAR&country=south%20africa")
-      .then((r) => r.json())
-      .then((d) => { if (d.status && d.data) setBanks(d.data); })
-      .catch(() => {});
-  }, []);
-
   async function handleSubmit() {
-    if (!name || !position || !phone || !bankCode || !accountNumber) {
+    if (!name || !position || !phone) {
       setError("Please complete all fields.");
       return;
     }
     setSubmitting(true);
     setError("");
     try {
-      const subRes = await fetch("/api/paystack/create-subaccount", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName: name, settlementBank: bankCode, accountNumber }),
-      });
-      const subData = await subRes.json();
-      if (!subData.status || !subData.data?.subaccount_code) {
-        throw new Error(subData.message || "Subaccount creation failed");
-      }
       const workerId = `worker_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       await setDoc(doc(db, "workers", workerId), {
         id: workerId,
@@ -48,11 +27,6 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
         name,
         position,
         phone,
-        bankName,
-        bankCode,
-        accountNumber,
-        accountName: name,
-        subaccountCode: subData.data.subaccount_code,
         createdAt: new Date().toISOString(),
       });
       setDone(true);
@@ -108,23 +82,9 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
               placeholder="082 123 4567" />
-            <p className="text-xs text-gray-400 mt-1">We'll text this number when you receive a tip.</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
-            <select value={bankCode} onChange={(e) => {
-              setBankCode(e.target.value);
-              setBankName(banks.find((b) => b.code === e.target.value)?.name || "");
-            }} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-              <option value="">Select your bank…</option>
-              {banks.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-            <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              placeholder="Your bank account number" />
+            <p className="text-xs text-gray-400 mt-1">
+              Tippers pay you directly on this number via PayShap. Make sure it's registered as your ShapID with your bank.
+            </p>
           </div>
           <button onClick={handleSubmit} disabled={submitting}
             className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition">
