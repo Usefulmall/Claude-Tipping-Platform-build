@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { Worker, Tip } from "../types";
+import { Worker } from "../types";
 
 interface Props { workerId: string; }
 
 const TIP_AMOUNTS = [10, 20, 50, 100, 200];
-const PLATFORM_FEE_PERCENT = 0.08; // 8% — must match percentage_charge in server.js
+
+function formatForDisplay(phone: string): string {
+  // Purely cosmetic grouping, e.g. "082 123 4567" — does not change the underlying digits.
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length !== 10) return phone;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+}
 
 export default function PublicTipView({ workerId }: Props) {
   const [worker, setWorker] = useState<Worker | null>(null);
@@ -15,10 +21,8 @@ export default function PublicTipView({ workerId }: Props) {
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [paying, setPaying] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -39,86 +43,13 @@ export default function PublicTipView({ workerId }: Props) {
   }, [workerId]);
 
   const finalAmount = selectedAmount ?? (customAmount ? parseFloat(customAmount) : 0);
-  const feeAmount = parseFloat((finalAmount * PLATFORM_FEE_PERCENT).toFixed(2));
-  const workerAmount = parseFloat((finalAmount - feeAmount).toFixed(2));
 
-  async function handlePay() {
-    setErrorMsg("");
-    if (!finalAmount || finalAmount < 5) {
-      setErrorMsg("Minimum tip is R5.");
-      return;
-    }
+  function handleCopy() {
     if (!worker) return;
-
-    setPaying(true);
-    const refId = `tip_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-
-    // Generate a placeholder email for Paystack's internal requirement.
-    // The tipper never sees or enters this — it's handled entirely server-side.
-    const emailForPaystack = `${refId}@tipme.noemail`;
-
-    // Save pending tip to Firestore before initiating payment
-    const pendingTip: Tip = {
-      id: refId,
-      workerId: worker.id,
-      workerName: worker.name,
-      employerId: worker.employerId,
-      amount: finalAmount,
-      feeAmount,
-      workerAmount,
-      status: "pending",
-      reference: refId,
-      customerEmail: emailForPaystack,
-      createdAt: new Date().toISOString(),
-      ...(customerName ? { customerName } : {}),
-    };
-
-    try {
-      await setDoc(doc(db, "tips", refId), pendingTip);
-    } catch {
-      setErrorMsg("Could not initiate payment. Please try again.");
-      setPaying(false);
-      return;
-    }
-
-    // Ask our server to initiate the Paystack charge via EFT (Ozow).
-    // The server holds the secret key and calls Paystack's Charge API.
-    // Paystack returns an authorization URL we redirect the tipper to.
-    try {
-      const res = await fetch("/api/paystack/initiate-eft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reference: refId,
-          amount: finalAmount,
-          email: emailForPaystack,
-          subaccountCode: worker.subaccountCode,
-          workerName: worker.name,
-          customerName: customerName || "Anonymous",
-          callbackUrl: `${window.location.origin}?payment=done&ref=${refId}&worker=${worker.id}`,
-        }),
-      });
-      const data = await res.json();
-
-      if (data.status && data.authorization_url) {
-        // Redirect tipper to Paystack's EFT/Ozow page — they pay via banking app
-        window.location.href = data.authorization_url;
-      } else {
-        throw new Error(data.message || "Could not initiate payment.");
-      }
-    } catch (e: any) {
-      setErrorMsg(e.message || "Something went wrong. Please try again.");
-      setPaying(false);
-    }
+    navigator.clipboard.writeText(worker.phone.replace(/\D/g, ""));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
-
-  // ── Check for payment return (tipper redirected back after paying) ───────────
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("payment") === "done") {
-      setSuccess(true);
-    }
-  }, []);
 
   if (loading) {
     return (
@@ -140,26 +71,20 @@ export default function PublicTipView({ workerId }: Props) {
     );
   }
 
-  if (success) {
+  if (sent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-gray-800">Thank you!</h2>
           <p className="text-gray-500 mt-2">
-            Your tip for <span className="font-semibold">{worker.name}</span> was sent successfully.
+            Your tip for <span className="font-semibold">{worker.name}</span> is on its way, straight to their own bank account.
           </p>
           <button
-            onClick={() => {
-              setSuccess(false);
-              setSelectedAmount(null);
-              setCustomAmount("");
-              setCustomerName("");
-              window.history.replaceState({}, "", `?worker=${worker.id}`);
-            }}
+            onClick={() => { setSent(false); setSelectedAmount(null); setCustomAmount(""); }}
             className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 rounded-xl transition"
           >
-            Tip Again
+            Back
           </button>
         </div>
       </div>
@@ -177,7 +102,8 @@ export default function PublicTipView({ workerId }: Props) {
           <p className="text-sm text-gray-500">{worker.position}</p>
         </div>
 
-        <p className="text-sm font-medium text-gray-700 mb-2">Select an amount (ZAR)</p>
+        {/* Step 1: pick an amount (for the tipper's own reference) */}
+        <p className="text-sm font-medium text-gray-700 mb-2">1. How much would you like to tip?</p>
         <div className="grid grid-cols-5 gap-2 mb-3">
           {TIP_AMOUNTS.map((amt) => (
             <button key={amt}
@@ -192,40 +118,41 @@ export default function PublicTipView({ workerId }: Props) {
             </button>
           ))}
         </div>
-
-        <input type="number" placeholder="Or enter custom amount (R)"
-          value={customAmount} min={5}
+        <input type="number" placeholder="Or enter a custom amount (R)"
+          value={customAmount} min={1}
           onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 mb-4"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 mb-5"
         />
 
-        {finalAmount >= 5 && (
-          <div className="bg-green-50 rounded-lg p-3 text-xs text-gray-600 mb-4 space-y-1">
-            <div className="flex justify-between"><span>Tip amount</span><span className="font-medium">R{finalAmount.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Platform fee (8%)</span><span>R{feeAmount.toFixed(2)}</span></div>
-            <div className="flex justify-between font-semibold text-green-700"><span>{worker.name} receives</span><span>R{workerAmount.toFixed(2)}</span></div>
-          </div>
-        )}
-
-        <div className="mb-4">
-          <input type="text" placeholder="Your name (optional)"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
+        {/* Step 2: the worker's PayShap number */}
+        <p className="text-sm font-medium text-gray-700 mb-2">2. Pay this number via PayShap</p>
+        <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-2 flex items-center justify-between gap-3">
+          <span className="text-lg font-bold text-gray-800 tracking-wide">{formatForDisplay(worker.phone)}</span>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 text-xs font-semibold bg-white border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
         </div>
+        <p className="text-xs text-gray-400 mb-5">This is {worker.name}'s own cellphone number, registered with their bank.</p>
 
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-2 mb-3">{errorMsg}</div>
-        )}
+        {/* Step 3: instructions */}
+        <p className="text-sm font-medium text-gray-700 mb-2">3. In your own banking app</p>
+        <ol className="text-sm text-gray-600 space-y-1.5 mb-6 list-decimal list-inside">
+          <li>Open your banking app and choose <span className="font-medium">Pay</span> or <span className="font-medium">PayShap</span>.</li>
+          <li>Enter or paste the cellphone number above as the recipient.</li>
+          <li>Enter{finalAmount >= 1 ? <> <span className="font-medium">R{finalAmount.toFixed(2)}</span></> : " your amount"} and confirm the payment goes to <span className="font-medium">{worker.name}</span>.</li>
+        </ol>
 
-        <button onClick={handlePay} disabled={paying || !finalAmount}
-          className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
+        <button
+          onClick={() => setSent(true)}
+          className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition text-sm"
         >
-          {paying ? "Opening payment…" : `Pay via Banking App${finalAmount >= 5 ? ` · R${finalAmount.toFixed(2)}` : ""}`}
+          I've sent the tip
         </button>
 
-        <p className="text-center text-xs text-gray-400 mt-3">Secured by Paystack & Ozow 🔒</p>
+        <p className="text-center text-xs text-gray-400 mt-3">Paid directly to {worker.name} via PayShap. TipMe never handles your money.</p>
       </div>
     </div>
   );
