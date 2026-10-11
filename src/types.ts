@@ -13,11 +13,7 @@ export interface Worker {
   employerId: string;
   name: string;
   position: string;
-  bankName: string;
-  bankCode: string;
-  accountNumber: string;
-  accountName: string;
-  subaccountCode: string;
+  phone: string; // doubles as the worker's PayShap ShapID for receiving tips
   createdAt: string;
 }
 
