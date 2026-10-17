@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { AppUser, Tip, Worker } from "../types";
 
@@ -9,7 +9,6 @@ interface Props { user: AppUser; }
 export default function AdminDashboard({ user }: Props) {
   const [tips, setTips] = useState<Tip[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
-  const [filter, setFilter] = useState<"all" | "success" | "pending" | "failed">("all");
 
   useEffect(() => {
     const unsub1 = onSnapshot(collection(db, "tips"), (snap) => {
@@ -22,10 +21,11 @@ export default function AdminDashboard({ user }: Props) {
     return () => { unsub1(); unsub2(); };
   }, []);
 
-  const filtered = filter === "all" ? tips : tips.filter((t) => t.status === filter);
-  const successTips = tips.filter((t) => t.status === "success");
-  const totalRevenue = successTips.reduce((s, t) => s + t.feeAmount, 0);
-  const totalTipped = successTips.reduce((s, t) => s + t.amount, 0);
+  // Every tip here is self-reported by the tipper (TipMe never processes the
+  // payment, so it has no way to confirm one happened). This is an activity
+  // indicator across the whole platform, not a reconciled revenue figure —
+  // TipMe no longer earns anything from the tip itself.
+  const totalReported = tips.reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,64 +46,45 @@ export default function AdminDashboard({ user }: Props) {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 p-4">
         <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Total Tips Processed</p>
-          <p className="text-2xl font-bold text-green-600">R{totalTipped.toFixed(2)}</p>
-          <p className="text-xs text-gray-400">{successTips.length} successful</p>
+          <p className="text-xs text-gray-500 mb-1">Tips Reported (all time)</p>
+          <p className="text-2xl font-bold text-green-600">R{totalReported.toFixed(2)}</p>
+          <p className="text-xs text-gray-400">{tips.length} self-reported tips</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Platform Revenue (5%)</p>
-          <p className="text-2xl font-bold text-blue-600">R{totalRevenue.toFixed(2)}</p>
-          <p className="text-xs text-gray-400">{workers.length} workers registered</p>
+          <p className="text-xs text-gray-500 mb-1">Registered Workers</p>
+          <p className="text-2xl font-bold text-blue-600">{workers.length}</p>
+          <p className="text-xs text-gray-400">across all employers</p>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 px-4 mb-4">
-        {(["all", "success", "pending", "failed"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 text-xs rounded-full font-medium capitalize transition ${
-              filter === f
-                ? "bg-green-500 text-white"
-                : "bg-white border border-gray-200 text-gray-600"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+      <div className="mx-4 mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <p className="text-xs text-amber-800">
+          Tips are paid directly between tipper and worker via PayShap — TipMe never sees the money. These
+          figures are self-reported by tippers tapping "I've sent the tip" and are not a confirmed payment record.
+        </p>
       </div>
 
       {/* Tips list */}
       <div className="px-4 space-y-3 pb-8">
-        {filtered.length === 0 ? (
+        {tips.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <p className="text-4xl mb-2">📭</p>
-            <p>No tips found.</p>
+            <p>No tips reported yet.</p>
           </div>
         ) : (
-          filtered.map((t) => (
+          tips.map((t) => (
             <div key={t.id} className="bg-white rounded-xl border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-800 text-sm">{t.workerName}</p>
-                  <p className="text-xs text-gray-400">{t.customerEmail}</p>
+                  <p className="text-xs text-gray-400">{new Date(t.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-green-600 text-lg">R{t.amount.toFixed(2)}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    t.status === "success" ? "bg-green-100 text-green-700" :
-                    t.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-red-100 text-red-600"
-                  }`}>
-                    {t.status}
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
+                    self-reported
                   </span>
                 </div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-400 border-t border-gray-50 pt-2">
-                <span>Fee: R{t.feeAmount.toFixed(2)}</span>
-                <span>Worker gets: R{t.workerAmount.toFixed(2)}</span>
-                <span>{new Date(t.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
           ))
