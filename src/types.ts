@@ -17,17 +17,15 @@ export interface Worker {
   createdAt: string;
 }
 
+// A tip is never confirmed by TipMe (we don't process the money), so this is
+// always a self-report from the tipper clicking "I've sent the tip" — shown
+// to employers as an unverified indicator, not a confirmed payment record.
 export interface Tip {
   id: string;
   workerId: string;
   workerName: string;
   employerId: string;
   amount: number;
-  feeAmount: number;
-  workerAmount: number;
-  status: "pending" | "success" | "failed";
-  reference: string;
-  customerEmail: string;
-  customerName?: string;
+  status: "reported";
   createdAt: string;
 }
