@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { Worker } from "../types";
+import { Worker, Tip } from "../types";
 
 interface Props { workerId: string; }
 
@@ -23,6 +23,7 @@ export default function PublicTipView({ workerId }: Props) {
   const [customAmount, setCustomAmount] = useState("");
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -49,6 +50,45 @@ export default function PublicTipView({ workerId }: Props) {
     navigator.clipboard.writeText(worker.phone.replace(/\D/g, ""));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  // The tipper is the one telling us a tip happened — TipMe has no way to
+  // confirm it independently, since the payment never passes through us.
+  // We log it as a self-report and let the worker's own phone notify them.
+  async function handleMarkSent() {
+    if (!worker) return;
+    setReporting(true);
+    const tipId = `tip_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const reportedAmount = finalAmount >= 1 ? finalAmount : 0;
+
+    try {
+      const tip: Tip = {
+        id: tipId,
+        workerId: worker.id,
+        workerName: worker.name,
+        employerId: worker.employerId,
+        amount: reportedAmount || 1, // Firestore rule requires amount > 0; a blank tip still counts as "a tip happened"
+        status: "reported",
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, "tips", tipId), tip);
+    } catch {
+      // Logging is a nice-to-have for the employer dashboard, not something
+      // that should block the tipper from finishing. Fail silently.
+    }
+
+    try {
+      await fetch("/api/notify-tip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: worker.phone, workerName: worker.name, amount: reportedAmount }),
+      });
+    } catch {
+      // Same — SMS is a courtesy notification, not something to block on.
+    }
+
+    setReporting(false);
+    setSent(true);
   }
 
   if (loading) {
@@ -146,10 +186,11 @@ export default function PublicTipView({ workerId }: Props) {
         </ol>
 
         <button
-          onClick={() => setSent(true)}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition text-sm"
+          onClick={handleMarkSent}
+          disabled={reporting}
+          className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition text-sm"
         >
-          I've sent the tip
+          {reporting ? "One moment…" : "I've sent the tip"}
         </button>
 
         <p className="text-center text-xs text-gray-400 mt-3">Paid directly to {worker.name} via PayShap. TipMe never handles your money.</p>
