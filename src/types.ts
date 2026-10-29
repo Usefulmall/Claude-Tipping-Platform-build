@@ -13,7 +13,8 @@ export interface Worker {
   employerId: string;
   name: string;
   position: string;
-  phone: string; // doubles as the worker's PayShap ShapID for receiving tips
+  phone: string; // the worker's cellphone number (first half of their PayShap ShapID)
+  bank?: string; // text after the "@" in the ShapID, e.g. "standardbank" (missing on workers registered before this field existed)
   createdAt: string;
 }
 
