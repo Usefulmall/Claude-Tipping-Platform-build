@@ -4,6 +4,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc } from "fi
 import { auth, db } from "../firebase";
 import { AppUser, Worker, Tip } from "../types";
 import QrCodeCard from "./QrCodeCard";
+import BankSelect from "./BankSelect";
 
 interface Props { user: AppUser; }
 
@@ -15,6 +16,7 @@ export default function EmployerDashboard({ user }: Props) {
   const [wName, setWName] = useState("");
   const [wPosition, setWPosition] = useState("");
   const [wPhone, setWPhone] = useState("");
+  const [wBank, setWBank] = useState("");
   const [adding, setAdding] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -38,8 +40,8 @@ export default function EmployerDashboard({ user }: Props) {
   }, [user.uid]);
 
   async function handleAddWorker() {
-    if (!wName || !wPosition || !wPhone) {
-      setFormError("Please complete all fields.");
+    if (!wName || !wPosition || !wPhone || !wBank) {
+      setFormError("Please complete all fields, including the worker's bank.");
       return;
     }
     setAdding(true);
@@ -52,10 +54,11 @@ export default function EmployerDashboard({ user }: Props) {
         name: wName,
         position: wPosition,
         phone: wPhone,
+        bank: wBank,
         createdAt: new Date().toISOString(),
       });
       setFormSuccess(`${wName} has been added!`);
-      setWName(""); setWPosition(""); setWPhone("");
+      setWName(""); setWPosition(""); setWPhone(""); setWBank("");
       setTab("workers");
     } catch (e: any) {
       setFormError(e.message || "Something went wrong.");
@@ -213,6 +216,7 @@ export default function EmployerDashboard({ user }: Props) {
                 Tippers pay the worker directly on this number via PayShap. Must be registered as their ShapID.
               </p>
             </div>
+            <BankSelect value={wBank} onChange={setWBank} phone={wPhone} audience="employer" />
 
             <button onClick={handleAddWorker} disabled={adding}
               className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition">

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import BankSelect from "./BankSelect";
 
 interface Props { employerId: string; }
 
@@ -8,13 +9,14 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const [phone, setPhone] = useState("");
+  const [bank, setBank] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit() {
-    if (!name || !position || !phone) {
-      setError("Please complete all fields.");
+    if (!name || !position || !phone || !bank) {
+      setError("Please complete all fields, including your bank.");
       return;
     }
     setSubmitting(true);
@@ -27,6 +29,7 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
         name,
         position,
         phone,
+        bank,
         createdAt: new Date().toISOString(),
       });
       setDone(true);
@@ -86,6 +89,7 @@ export default function PublicWorkerOnboard({ employerId }: Props) {
               Tippers pay you directly on this number via PayShap. Make sure it's registered as your ShapID with your bank.
             </p>
           </div>
+          <BankSelect value={bank} onChange={setBank} phone={phone} audience="worker" />
           <button onClick={handleSubmit} disabled={submitting}
             className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition">
             {submitting ? "Registering…" : "Complete Registration"}

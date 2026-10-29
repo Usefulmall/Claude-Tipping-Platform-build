@@ -2,17 +2,11 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Worker, Tip } from "../types";
+import { fullShapId, bankLabel } from "../banks";
 
 interface Props { workerId: string; }
 
 const TIP_AMOUNTS = [10, 20, 50, 100, 200];
-
-function formatForDisplay(phone: string): string {
-  // Purely cosmetic grouping, e.g. "082 123 4567" — does not change the underlying digits.
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length !== 10) return phone;
-  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
-}
 
 export default function PublicTipView({ workerId }: Props) {
   const [worker, setWorker] = useState<Worker | null>(null);
@@ -47,7 +41,7 @@ export default function PublicTipView({ workerId }: Props) {
 
   function handleCopy() {
     if (!worker) return;
-    navigator.clipboard.writeText(worker.phone.replace(/\D/g, ""));
+    navigator.clipboard.writeText(fullShapId(worker.phone, worker.bank));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -165,9 +159,9 @@ export default function PublicTipView({ workerId }: Props) {
         />
 
         {/* Step 2: the worker's PayShap number */}
-        <p className="text-sm font-medium text-gray-700 mb-2">2. Pay this number via PayShap</p>
+        <p className="text-sm font-medium text-gray-700 mb-2">2. Pay this ShapID via PayShap</p>
         <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-2 flex items-center justify-between gap-3">
-          <span className="text-lg font-bold text-gray-800 tracking-wide">{formatForDisplay(worker.phone)}</span>
+          <span className="text-base font-bold text-gray-800 break-all">{fullShapId(worker.phone, worker.bank)}</span>
           <button
             onClick={handleCopy}
             className="shrink-0 text-xs font-semibold bg-white border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
@@ -175,13 +169,17 @@ export default function PublicTipView({ workerId }: Props) {
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>
-        <p className="text-xs text-gray-400 mb-5">This is {worker.name}'s own cellphone number, registered with their bank.</p>
+        <p className="text-xs text-gray-400 mb-5">
+          {worker.bank
+            ? <>This is {worker.name}'s cellphone number at {bankLabel(worker.bank)}. Use it exactly as shown, including the part after the @.</>
+            : <>This is {worker.name}'s own cellphone number, registered with their bank.</>}
+        </p>
 
         {/* Step 3: instructions */}
         <p className="text-sm font-medium text-gray-700 mb-2">3. In your own banking app</p>
         <ol className="text-sm text-gray-600 space-y-1.5 mb-6 list-decimal list-inside">
           <li>Open your banking app and choose <span className="font-medium">Pay</span> or <span className="font-medium">PayShap</span>.</li>
-          <li>Enter or paste the cellphone number above as the recipient.</li>
+          <li>Paste the full ShapID above as the recipient, exactly as shown{worker.bank ? <>, including <span className="font-medium">@{worker.bank}</span></> : ""}. Your app may only accept it with the @ part.</li>
           <li>Enter{finalAmount >= 1 ? <> <span className="font-medium">R{finalAmount.toFixed(2)}</span></> : " your amount"} and confirm the payment goes to <span className="font-medium">{worker.name}</span>.</li>
         </ol>
 

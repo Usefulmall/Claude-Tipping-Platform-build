@@ -20,7 +20,7 @@ const SECTIONS = [
     title: "3. Roles and Responsibilities",
     body: [
       "Tippers: You are responsible for entering the correct tip amount and sending payment directly to the Service Worker via PayShap, using the cellphone number shown on their TipMe QR code. Tips are a voluntary gesture of goodwill toward the Service Worker and are not payment for goods or services from TipMe.",
-      "Service Workers: You are responsible for providing accurate personal details during registration, including a cellphone number correctly registered as your PayShap ShapID, so tippers can pay you directly. You are responsible for the security of your own account credentials and QR code.",
+      "Service Workers: You are responsible for providing accurate personal details during registration, including a cellphone number correctly registered as your PayShap ShapID and the correct bank it is registered with (tippers pay your ShapID in the form cellphone number@bankname), so tippers can pay you directly. You are responsible for the security of your own account credentials and QR code.",
       "Employers: If you register and manage Service Worker accounts on behalf of your business, you are responsible for ensuring each worker has consented to being added to the platform and that the details submitted are accurate.",
     ],
   },
