@@ -30,6 +30,9 @@ service cloud.firestore {
              data.name is string && data.name.size() <= 100 &&
              data.position is string &&
              data.phone is string && data.phone.size() >= 9 &&
+             // 'bank' is the text after the @ in the ShapID. Optional so workers
+             // registered before it existed keep working; the forms require it.
+             (!('bank' in data) || (data.bank is string && data.bank.size() >= 2 && data.bank.size() <= 30)) &&
              data.createdAt is string;
     }
 
