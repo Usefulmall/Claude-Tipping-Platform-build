@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Worker, Tip } from "../types";
-import { fullShapId, bankLabel } from "../banks";
+import { fullShapId, bankLabel, correctedBank } from "../banks";
 
 interface Props { workerId: string; }
 
@@ -179,7 +179,7 @@ export default function PublicTipView({ workerId }: Props) {
         <p className="text-sm font-medium text-gray-700 mb-2">3. In your own banking app</p>
         <ol className="text-sm text-gray-600 space-y-1.5 mb-6 list-decimal list-inside">
           <li>Open your banking app and choose <span className="font-medium">Pay</span> or <span className="font-medium">PayShap</span>.</li>
-          <li>Paste the full ShapID above as the recipient, exactly as shown{worker.bank ? <>, including <span className="font-medium">@{worker.bank}</span></> : ""}. Your app may only accept it with the @ part.</li>
+          <li>Paste the full ShapID above as the recipient, exactly as shown{worker.bank ? <>, including <span className="font-medium">@{correctedBank(worker.bank)}</span></> : ""}. Your app may only accept it with the @ part.</li>
           <li>Enter{finalAmount >= 1 ? <> <span className="font-medium">R{finalAmount.toFixed(2)}</span></> : " your amount"} and confirm the payment goes to <span className="font-medium">{worker.name}</span>.</li>
         </ol>
 
