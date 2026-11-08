@@ -9,40 +9,24 @@ const FEATURES = [
   {
     icon: "📱",
     title: "QR Code Tipping",
-    description: "Customers scan a QR code to send a tip instantly. No cash, no hassle.",
+    description: "Register to create a QR code to receive tips. Customers scan your QR card to see your PayShap details on their cellphone, then pay from their own banking app. No cash, no hassle.",
   },
   {
     icon: "⚡",
-    title: "Instant Payouts",
-    description: "Tips go straight from the customer's banking app to the worker's own bank account via PayShap — no delay, no middleman.",
-  },
-  {
-    icon: "🔒",
-    title: "Secure & Safe",
-    description: "Payments move bank-to-bank over PayShap. TipMe never holds or touches tip money.",
+    title: "Instant, Secure & Safe Payouts",
+    description: "Tips go straight from the customer's banking app to your own registered bank account via PayShap. No delay, no PayShap fees to you, and nothing deducted from your tips. Payments move bank-to-bank, and TipMe never holds or touches tip money.",
   },
   {
     icon: "👋",
     title: "Easy Onboarding",
-    description: "A simple form captures everything needed — just a name, position and cellphone number.",
-  },
-  {
-    icon: "📊",
-    title: "Transparent Tracking",
-    description: "Employers can track tips, workers, and payouts in one simple dashboard.",
-  },
-  {
-    icon: "🖨️",
-    title: "Printable QR Cards",
-    description: "Print a QR code for each worker to display at a till point or name badge.",
+    description: "A simple form captures everything needed: just a name, position, cellphone number and bank (you must have PayShap activated at your own bank). Your first month is free, then a monthly subscription of only R20 is due.",
   },
 ];
 
 const STEPS = [
-  { number: 1, title: "Register", description: "Sign up as an employer and create your account in seconds." },
-  { number: 2, title: "Onboard Workers", description: "Add your workers, or share a link so they register themselves." },
-  { number: 3, title: "Share the QR Code", description: "Each worker gets a unique QR code to display or print." },
-  { number: 4, title: "Receive Tips", description: "Customers scan and tip. Money goes straight to the worker's bank account." },
+  { number: 1, title: "Register", description: "Register and create your account in seconds." },
+  { number: 2, title: "Share the QR Code", description: "Download your printable QR code with full instructions." },
+  { number: 3, title: "Receive Tips", description: "Customers scan and tip. Money goes straight to your bank account." },
 ];
 
 const STEP_COLORS = [
@@ -101,7 +85,7 @@ export default function LandingPage({ onGetStarted }: Props) {
         <h2 className="text-xl font-bold text-gray-800 text-center mb-8">
           Why Choose Our Platform?
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
             <div key={f.title} className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
               <div className="text-2xl mb-2">{f.icon}</div>
@@ -117,7 +101,7 @@ export default function LandingPage({ onGetStarted }: Props) {
         <h2 className="text-xl font-bold text-gray-800 text-center mb-10">
           How It Works
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {STEPS.map((s, i) => (
             <div key={s.number} className="text-center">
               <div className={`w-12 h-12 ${STEP_COLORS[i].bg} ${STEP_COLORS[i].text} rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3`}>
