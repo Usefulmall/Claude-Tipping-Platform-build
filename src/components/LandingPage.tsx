@@ -24,12 +24,12 @@ const FEATURES = [
   {
     icon: "👋",
     title: "Easy Onboarding",
-    description: "A simple form captures everything needed — just a name, position and cellphone number.",
+    description: "A simple form captures everything needed — just a name, position, cellphone number and bank.",
   },
   {
-    icon: "📊",
-    title: "Transparent Tracking",
-    description: "Employers can track tips, workers, and payouts in one simple dashboard.",
+    icon: "💚",
+    title: "Workers Keep Every Tip",
+    description: "Each tip goes straight to the worker's own account. TipMe takes no cut of any tip and never holds the money.",
   },
   {
     icon: "🖨️",
@@ -84,8 +84,9 @@ export default function LandingPage({ onGetStarted }: Props) {
           Digital Tipping Made Simple
         </h1>
         <p className="text-gray-600 mb-8">
-          Enable your workers to receive tips directly through QR codes. Secure, fast,
-          and transparent — with automatic tracking for every tip.
+          Let your workers receive tips straight into their own bank accounts through a
+          QR code. Fast, secure and cashless — customers pay from their own banking app,
+          and TipMe never touches the money.
         </p>
         <button
           onClick={() => setShowTerms(true)}
