@@ -10,6 +10,8 @@ import PublicWorkerOnboard from "./components/PublicWorkerOnboard";
 import LoginPage from "./components/LoginPage";
 import LandingPage from "./components/LandingPage";
 import ChooseRole from "./components/ChooseRole";
+import WorkerAuth from "./components/WorkerAuth";
+import WorkerHome from "./components/WorkerHome";
 import TermsOfUse from "./components/TermsOfUse";
 
 export default function App() {
@@ -59,6 +61,7 @@ export default function App() {
   if (user) {
     if (user.role === "admin") return <AdminDashboard user={user} />;
     if (user.role === "employer") return <EmployerDashboard user={user} />;
+    if (user.role === "worker") return <WorkerHome user={user} />;
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-500">Unknown account role. Please contact support.</p>
@@ -77,7 +80,7 @@ export default function App() {
     );
   }
   if (screen === "worker") {
-    return <PublicWorkerOnboard employerId="self" independent onBack={() => setScreen("choose")} />;
+    return <WorkerAuth onBack={() => setScreen("choose")} />;
   }
   return <LoginPage onBack={() => setScreen("choose")} />;
 }

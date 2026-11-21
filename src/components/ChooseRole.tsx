@@ -22,7 +22,7 @@ export default function ChooseRole({ onWorker, onEmployer, onBack }: Props) {
             <div className="text-2xl mb-1">🙋</div>
             <p className="font-bold text-gray-800">I'm a worker</p>
             <p className="text-sm text-gray-500">
-              I want to receive tips myself. Register in a minute and get your own QR code to print.
+              I want to receive tips myself. Create my own login, then get and print my own QR code.
             </p>
           </button>
 

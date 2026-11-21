@@ -2,14 +2,10 @@ import { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import BankSelect from "./BankSelect";
-import WorkerQrPage from "./WorkerQrPage";
-import { Worker } from "../types";
 
-// employerId "self" marks a worker who registered on their own (no employer).
-interface Props { employerId: string; independent?: boolean; onBack?: () => void; }
+interface Props { employerId: string; }
 
-export default function PublicWorkerOnboard({ employerId, independent, onBack }: Props) {
-  const [created, setCreated] = useState<Worker | null>(null);
+export default function PublicWorkerOnboard({ employerId }: Props) {
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,7 +23,7 @@ export default function PublicWorkerOnboard({ employerId, independent, onBack }:
     setError("");
     try {
       const workerId = `worker_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-      const newWorker: Worker = {
+      await setDoc(doc(db, "workers", workerId), {
         id: workerId,
         employerId,
         name,
@@ -35,19 +31,13 @@ export default function PublicWorkerOnboard({ employerId, independent, onBack }:
         phone,
         bank,
         createdAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, "workers", workerId), newWorker);
-      setCreated(newWorker);
+      });
       setDone(true);
     } catch (e: any) {
       setError(e.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (done && independent && created) {
-    return <WorkerQrPage worker={created} />;
   }
 
   if (done) {
@@ -104,11 +94,6 @@ export default function PublicWorkerOnboard({ employerId, independent, onBack }:
             className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition">
             {submitting ? "Registering…" : "Complete Registration"}
           </button>
-          {onBack && (
-            <p className="text-center text-sm">
-              <button onClick={onBack} className="text-gray-500 hover:underline">← Back</button>
-            </p>
-          )}
         </div>
       </div>
     </div>

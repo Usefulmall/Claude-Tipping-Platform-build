@@ -19,7 +19,7 @@ service cloud.firestore {
              data.uid is string &&
              data.email is string &&
              data.name is string &&
-             data.role in ['admin', 'employer'] &&
+             data.role in ['admin', 'employer', 'worker'] &&
              data.createdAt is string;
     }
 
