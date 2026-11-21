@@ -14,6 +14,12 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // True when the signed-in person's account record says they are an admin.
+    function isAdmin() {
+      return isSignedIn() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'email', 'name', 'role', 'createdAt']) &&
              data.uid is string &&
@@ -69,7 +75,12 @@ service cloud.firestore {
 
     // ─── Workers ──────────────────────────────────────────────────────────────
     match /workers/{workerId} {
-      allow read: if true;
+      // Anyone may look up ONE worker by their id (the tip page needs this when
+      // a customer scans a QR code). Listing workers is not public: an employer
+      // may list only their own workers, and an admin may list everyone.
+      allow get: if true;
+      allow list: if isSignedIn() &&
+                  (isAdmin() || resource.data.employerId == request.auth.uid);
       allow create: if isValidWorker(incoming());
       allow update: if isSignedIn() &&
                     isValidWorker(incoming()) &&
