@@ -51,8 +51,8 @@ export default function LandingPage({ onGetStarted }: Props) {
       {/* Top bar */}
       <header className="bg-white/70 backdrop-blur border-b border-gray-100 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/tipme-icon.png" alt="TipMe" className="w-12 h-12 object-contain" />
-          <span className="font-bold text-gray-800 text-2xl">TipMe Platform</span>
+          <img src="/tipme-logo-wide.png" alt="TipMe" className="h-14 sm:h-20 w-auto rounded-xl object-cover shadow-sm" />
+          <span className="font-bold text-gray-800 text-lg sm:text-2xl">TipMe Platform</span>
         </div>
         <button
           onClick={() => setShowTerms(true)}
