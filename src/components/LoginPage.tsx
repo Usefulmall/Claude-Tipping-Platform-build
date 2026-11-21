@@ -7,7 +7,7 @@ import { Worker } from "../types";
 import BankSelect from "./BankSelect";
 import WorkerQrPage from "./WorkerQrPage";
 
-interface Props { onBack?: () => void; }
+interface Props { onBack?: () => void; startMode?: "login" | "register"; }
 
 // The username is the person's cellphone number. Firebase wants an email-style
 // login, so the number is turned into a private one that is never shown or used
@@ -33,8 +33,8 @@ function friendlyError(e: any): string {
 
 const field = "w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400";
 
-export default function LoginPage({ onBack }: Props) {
-  const [mode, setMode] = useState<"login" | "register">("register");
+export default function LoginPage({ onBack, startMode = "register" }: Props) {
+  const [mode, setMode] = useState<"login" | "register">(startMode);
   const [accountType, setAccountType] = useState<"employer" | "individual">("individual");
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");

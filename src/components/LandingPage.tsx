@@ -2,7 +2,8 @@ import { useState } from "react";
 import TermsGateModal from "./TermsGateModal";
 
 interface Props {
-  onGetStarted: () => void;
+  onGetStarted: () => void; // new users: after the Terms, opens Register
+  onSignIn: () => void; // returning users: opens Sign In directly
 }
 
 const FEATURES = [
@@ -36,7 +37,7 @@ const STEP_COLORS = [
   { bg: "bg-orange-100", text: "text-orange-600" },
 ];
 
-export default function LandingPage({ onGetStarted }: Props) {
+export default function LandingPage({ onGetStarted, onSignIn }: Props) {
   const [showTerms, setShowTerms] = useState(false);
 
   return (
@@ -54,12 +55,20 @@ export default function LandingPage({ onGetStarted }: Props) {
           <img src="/tipme-logo-wide.png" alt="TipMe" className="h-14 sm:h-20 w-auto rounded-xl object-cover shadow-sm" />
           <span className="font-bold text-gray-800 text-lg sm:text-2xl">TipMe Platform</span>
         </div>
-        <button
-          onClick={() => setShowTerms(true)}
-          className="text-sm bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition"
-        >
-          Sign In / Register
-        </button>
+        <div className="flex flex-col items-center shrink-0">
+          <button
+            onClick={onSignIn}
+            className="text-sm bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-2 rounded-lg transition"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => setShowTerms(true)}
+            className="text-xs text-gray-500 hover:text-green-600 hover:underline mt-1"
+          >
+            Not registered? Click here
+          </button>
+        </div>
       </header>
 
       {/* Hero */}

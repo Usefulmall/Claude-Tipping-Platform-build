@@ -15,7 +15,7 @@ import TermsOfUse from "./components/TermsOfUse";
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showLogin, setShowLogin] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register" | null>(null);
 
   const params = new URLSearchParams(window.location.search);
   const workerIdParam = params.get("worker");
@@ -67,6 +67,8 @@ export default function App() {
     );
   }
 
-  if (!showLogin) return <LandingPage onGetStarted={() => setShowLogin(true)} />;
-  return <LoginPage onBack={() => setShowLogin(false)} />;
+  if (!authMode) {
+    return <LandingPage onGetStarted={() => setAuthMode("register")} onSignIn={() => setAuthMode("login")} />;
+  }
+  return <LoginPage key={authMode} startMode={authMode} onBack={() => setAuthMode(null)} />;
 }
