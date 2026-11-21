@@ -53,11 +53,15 @@ service cloud.firestore {
 
     // ─── Users ────────────────────────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().createdAt is string;
+      // The app only ever reads a person's own account record.
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      // Public sign-up can only create employer or worker accounts, never admin.
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) &&
+                    incoming().role in ['employer', 'worker'];
       allow update: if isSignedIn() && request.auth.uid == userId &&
                     isValidUser(incoming()) &&
                     incoming().uid == existing().uid &&
+                    incoming().role == existing().role &&
                     incoming().email == existing().email &&
                     incoming().createdAt == existing().createdAt;
       allow delete: if false;
