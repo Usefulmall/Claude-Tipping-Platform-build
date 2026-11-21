@@ -9,12 +9,13 @@ import PublicTipView from "./components/PublicTipView";
 import PublicWorkerOnboard from "./components/PublicWorkerOnboard";
 import LoginPage from "./components/LoginPage";
 import LandingPage from "./components/LandingPage";
+import ChooseRole from "./components/ChooseRole";
 import TermsOfUse from "./components/TermsOfUse";
 
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showLogin, setShowLogin] = useState(false);
+  const [screen, setScreen] = useState<"landing" | "choose" | "worker" | "employer">("landing");
 
   const params = new URLSearchParams(window.location.search);
   const workerIdParam = params.get("worker");
@@ -65,6 +66,18 @@ export default function App() {
     );
   }
 
-  if (!showLogin) return <LandingPage onGetStarted={() => setShowLogin(true)} />;
-  return <LoginPage />;
+  if (screen === "landing") return <LandingPage onGetStarted={() => setScreen("choose")} />;
+  if (screen === "choose") {
+    return (
+      <ChooseRole
+        onWorker={() => setScreen("worker")}
+        onEmployer={() => setScreen("employer")}
+        onBack={() => setScreen("landing")}
+      />
+    );
+  }
+  if (screen === "worker") {
+    return <PublicWorkerOnboard employerId="self" independent onBack={() => setScreen("choose")} />;
+  }
+  return <LoginPage onBack={() => setScreen("choose")} />;
 }

@@ -6,7 +6,9 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-export default function LoginPage() {
+interface Props { onBack?: () => void; }
+
+export default function LoginPage({ onBack }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -124,6 +126,11 @@ export default function LoginPage() {
             {mode === "login" ? "Register" : "Sign In"}
           </button>
         </p>
+        {onBack && (
+          <p className="text-center text-sm mt-3">
+            <button onClick={onBack} className="text-gray-500 hover:underline">← Back</button>
+          </p>
+        )}
       </div>
     </div>
   );

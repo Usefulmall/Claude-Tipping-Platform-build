@@ -4,17 +4,18 @@ import { Worker } from "../types";
 interface Props {
   worker: Worker;
   baseUrl: string;
+  large?: boolean; // bigger QR, used on the worker's own "your QR code" page
 }
 
-export default function QrCodeCard({ worker, baseUrl }: Props) {
+export default function QrCodeCard({ worker, baseUrl, large }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   const tipUrl = `${baseUrl}?worker=${worker.id}&name=${encodeURIComponent(worker.name)}`;
 
   useEffect(() => {
-    const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tipUrl)}`;
+    const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${large ? "300x300" : "200x200"}&data=${encodeURIComponent(tipUrl)}`;
     setQrDataUrl(apiUrl);
-  }, [tipUrl]);
+  }, [tipUrl, large]);
 
   function handlePrint() {
     const win = window.open("", "_blank");
@@ -68,9 +69,9 @@ export default function QrCodeCard({ worker, baseUrl }: Props) {
       <p className="font-semibold text-gray-800 text-sm">{worker.name}</p>
       <p className="text-xs text-gray-500">{worker.position}</p>
       {qrDataUrl ? (
-        <img src={qrDataUrl} alt={`QR code for ${worker.name}`} className="w-36 h-36 rounded" />
+        <img src={qrDataUrl} alt={`QR code for ${worker.name}`} className={`${large ? "w-56 h-56" : "w-36 h-36"} rounded`} />
       ) : (
-        <div className="w-36 h-36 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">
+        <div className={`${large ? "w-56 h-56" : "w-36 h-36"} bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400`}>
           Generating…
         </div>
       )}
