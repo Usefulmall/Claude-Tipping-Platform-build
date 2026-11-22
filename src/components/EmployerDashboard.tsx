@@ -21,7 +21,6 @@ export default function EmployerDashboard({ user }: Props) {
   const [formSuccess, setFormSuccess] = useState("");
 
   const baseUrl = window.location.origin;
-  const onboardLink = `${baseUrl}?onboard=${user.uid}`;
 
   useEffect(() => {
     const q = query(collection(db, "workers"), where("employerId", "==", user.uid));
@@ -75,19 +74,6 @@ export default function EmployerDashboard({ user }: Props) {
           Sign out
         </button>
       </header>
-
-      <div className="m-4 bg-green-50 border border-green-200 rounded-xl p-3">
-        <p className="text-xs font-medium text-green-800 mb-1">Worker self-registration link</p>
-        <div className="flex gap-2 items-center">
-          <p className="text-xs text-green-700 truncate flex-1">{onboardLink}</p>
-          <button
-            onClick={() => navigator.clipboard.writeText(onboardLink)}
-            className="text-xs bg-green-500 text-white px-2 py-1 rounded shrink-0"
-          >
-            Copy
-          </button>
-        </div>
-      </div>
 
       <div className="flex border-b border-gray-200 mx-4">
         {(["workers", "add"] as const).map((t) => (
