@@ -3,6 +3,32 @@ import { auth } from "../firebase";
 import { Worker } from "../types";
 import { fullShapId } from "../banks";
 import QrCodeCard from "./QrCodeCard";
+import {
+  PRICE_RAND, SUBSCRIPTION_SHAPID, activeUntil, formatDate, inFreeMonth, isActive, paymentReference,
+} from "../subscription";
+
+// Shows whether the QR code is switched on, and how to pay the R20 to keep it on.
+function SubscriptionBanner({ worker }: { worker: Worker }) {
+  const active = isActive(worker);
+  const until = formatDate(activeUntil(worker));
+  return (
+    <div className={`mb-4 rounded-lg border p-3 text-sm ${
+      active ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"
+    }`}>
+      <p className="font-semibold">
+        {active
+          ? inFreeMonth(worker) ? `Your first month is free, until ${until}.` : `Your QR code is active until ${until}.`
+          : `Your QR code is inactive since ${until}. Customers cannot tip you until you pay.`}
+      </p>
+      <p className="mt-1 text-xs">
+        To keep it on, pay <b>R{PRICE_RAND}</b> per month by PayShap in your banking app to{" "}
+        <b className="font-mono break-all">{SUBSCRIPTION_SHAPID}</b>, and use your cellphone number{" "}
+        <b className="font-mono">{paymentReference(worker)}</b> as the reference. We switch you on once
+        your payment is received.
+      </p>
+    </div>
+  );
+}
 
 interface Props {
   worker: Worker;
@@ -28,6 +54,8 @@ export default function WorkerQrPage({ worker, justRegistered }: Props) {
           </h1>
           <p className="text-sm text-gray-500">This is your personal tipping QR code.</p>
         </div>
+
+        <SubscriptionBanner worker={worker} />
 
         <QrCodeCard worker={worker} baseUrl={baseUrl} large />
 

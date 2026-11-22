@@ -16,6 +16,11 @@ export interface Worker {
   phone: string; // the worker's cellphone number (first half of their PayShap ShapID)
   bank?: string; // text after the "@" in the ShapID, e.g. "standardbank" (missing on workers registered before this field existed)
   createdAt: string;
+  // Subscription: the QR code is active until this date. Missing means "still in
+  // the free first month" (see subscription.ts). Only an admin or the server may set it.
+  paidUntil?: string;
+  // Which reminder SMS was last sent (e.g. "pre:2026-12-22"), so none is sent twice.
+  lastReminder?: string;
 }
 
 // A tip is never confirmed by TipMe (we don't process the money), so this is

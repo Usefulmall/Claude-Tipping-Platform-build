@@ -4,6 +4,11 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import https from "https";
+import fs from "fs";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+import { runReminders, dayKey } from "./reminders.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,9 +81,104 @@ app.post("/api/notify-tip", async (req, res) => {
   }
 });
 
+// ─── Subscription reminders ────────────────────────────────────────────────────
+// The server reads the workers straight from the database with a private
+// service-account key (env var FIREBASE_SERVICE_ACCOUNT, the whole JSON file
+// pasted in). Without the key the rest of the site still works; only the
+// reminder SMS messages are switched off.
+let adminApp = null;
+function getAdminApp() {
+  if (adminApp) return adminApp;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) return null;
+  try {
+    adminApp = getApps()[0] || initializeApp({ credential: cert(JSON.parse(raw)) });
+    return adminApp;
+  } catch (err) {
+    console.error("[Reminders] FIREBASE_SERVICE_ACCOUNT is not valid:", err.message);
+    return null;
+  }
+}
+
+function getDb() {
+  const appInstance = getAdminApp();
+  if (!appInstance) return null;
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, "firebase-applet-config.json"), "utf8"));
+  return getFirestore(appInstance, config.firestoreDatabaseId);
+}
+
+async function sendDueReminders() {
+  const db = getDb();
+  if (!db) throw new Error("Reminders are not set up: FIREBASE_SERVICE_ACCOUNT is missing.");
+  return runReminders({
+    listWorkers: async () => (await db.collection("workers").get()).docs.map((d) => d.data()),
+    sendSms,
+    markSent: (workerId, marker) => db.collection("workers").doc(workerId).update({ lastReminder: marker }),
+    toInternational: toInternationalSaNumber,
+  });
+}
+
+// A reminder run can be started by a signed-in TipMe admin (the button on the
+// Admin page) or by an outside timer that knows CRON_SECRET (optional).
+async function isAllowedToRun(req) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.get("x-cron-secret") === secret) return true;
+
+  const header = req.get("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) return false;
+  const appInstance = getAdminApp();
+  if (!appInstance) return false;
+  try {
+    const decoded = await getAuth(appInstance).verifyIdToken(token);
+    const snap = await getDb().collection("users").doc(decoded.uid).get();
+    return snap.exists && snap.data().role === "admin";
+  } catch {
+    return false;
+  }
+}
+
+app.post("/api/run-reminders", async (req, res) => {
+  if (!getAdminApp()) {
+    return res.status(503).json({ message: "Reminders are not set up yet (the server is missing its database key)." });
+  }
+  if (!(await isAllowedToRun(req))) return res.status(403).json({ message: "Not allowed." });
+  try {
+    const result = await sendDueReminders();
+    console.log("[Reminders] Run finished:", JSON.stringify(result));
+    return res.json(result);
+  } catch (err) {
+    console.error("[Reminders] Run failed:", err.message);
+    return res.status(500).json({ message: "Could not send reminders." });
+  }
+});
+
+// Once a day, from 08:00 South African time, check who is due a reminder.
+// (Each worker's lastReminder marker stops any message going out twice, so an
+// extra or repeated run is harmless.)
+let lastAutoRunDay = "";
+function startDailyReminderTimer() {
+  const tick = async () => {
+    const now = new Date();
+    const sastHour = (now.getUTCHours() + 2) % 24;
+    const today = dayKey(now);
+    if (sastHour < 8 || lastAutoRunDay === today) return;
+    lastAutoRunDay = today;
+    try {
+      const result = await sendDueReminders();
+      console.log("[Reminders] Daily run:", JSON.stringify(result));
+    } catch (err) {
+      console.error("[Reminders] Daily run failed:", err.message);
+      lastAutoRunDay = ""; // try again at the next check
+    }
+  };
+  setInterval(tick, 30 * 60 * 1000);
+  setTimeout(tick, 60 * 1000);
+}
+
 // ─── Health check ──────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", sms: !!process.env.BULKSMS_USERNAME });
+  res.json({ status: "ok", sms: !!process.env.BULKSMS_USERNAME, reminders: !!process.env.FIREBASE_SERVICE_ACCOUNT });
 });
 
 // ─── Serve built React frontend ────────────────────────────────────────────────
@@ -91,4 +191,6 @@ app.get("*", (_req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[TipMe] Running on port ${PORT}`);
   console.log(`[TipMe] SMS: ${process.env.BULKSMS_USERNAME ? "✅ configured" : "⚠️  not configured"}`);
+  console.log(`[TipMe] Reminders: ${process.env.FIREBASE_SERVICE_ACCOUNT ? "✅ configured" : "⚠️  not configured"}`);
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) startDailyReminderTimer();
 });

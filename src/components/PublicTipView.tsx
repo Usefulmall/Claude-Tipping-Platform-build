@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Worker, Tip } from "../types";
 import { fullShapId, bankLabel, correctedBank } from "../banks";
+import { isActive } from "../subscription";
 
 interface Props { workerId: string; }
 
@@ -100,6 +101,22 @@ export default function PublicTipView({ workerId }: Props) {
           <div className="text-5xl mb-4">🔍</div>
           <h2 className="text-xl font-bold text-gray-800">Worker not found</h2>
           <p className="text-gray-500 mt-2">This QR code may be invalid or expired.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // The worker's subscription has lapsed, so their QR code is switched off.
+  if (!isActive(worker)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+          <div className="text-5xl mb-4">⏸️</div>
+          <h2 className="text-xl font-bold text-gray-800">This QR code is inactive</h2>
+          <p className="text-gray-500 mt-2 text-sm">
+            {worker.name}'s TipMe QR code is not switched on at the moment, so tips cannot be sent from this page.
+            You can still thank them in person.
+          </p>
         </div>
       </div>
     );
