@@ -18,6 +18,10 @@ export default function TermsGateModal({ onAgree, onCancel }: Props) {
           processes tip money. Tips are generally final, though errors or
           unauthorised transactions can be reported for review.
         </p>
+        <p className="text-sm text-gray-600 leading-relaxed mb-3">
+          Service Workers: your first month is free, then the TipMe subscription is
+          R20 per month. TipMe takes no fee on tips.
+        </p>
         <p className="text-sm text-gray-600 leading-relaxed mb-4">
           Please read our full{" "}
           <a

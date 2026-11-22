@@ -20,7 +20,7 @@ const SECTIONS = [
     title: "3. Roles and Responsibilities",
     body: [
       "Tippers: You are responsible for entering the correct tip amount and sending payment directly to the Service Worker via PayShap, using the cellphone number shown on their TipMe QR code. Tips are a voluntary gesture of goodwill toward the Service Worker and are not payment for goods or services from TipMe.",
-      "Service Workers: You are responsible for providing accurate personal details during registration, including a cellphone number correctly registered as your PayShap ShapID and the correct bank it is registered with (tippers pay your ShapID in the form cellphone number@bankname), so tippers can pay you directly. You are responsible for the security of your own account credentials and QR code.",
+      "Service Workers: You are responsible for providing accurate personal details during registration, including a cellphone number correctly registered as your PayShap ShapID and the correct bank it is registered with (tippers pay your ShapID in the form cellphone number@bankname), so tippers can pay you directly. You sign in with your cellphone number and a password you choose, and you are responsible for keeping that password and your QR code secure. Your name, position and PayShap ID (your cellphone number and bank) are shown to anyone who scans your QR code or opens your tip link, so that they can pay you.",
       "Employers: If you register and manage Service Worker accounts on behalf of your business, you are responsible for ensuring each worker has consented to being added to the platform and that the details submitted are accurate.",
     ],
   },
@@ -28,7 +28,7 @@ const SECTIONS = [
     title: "4. Payments, Fees and Payouts",
     body: [
       "Tips are paid directly from the Tipper to the Service Worker using PayShap, South Africa's real-time, cellphone-number-based payment system. TipMe is not involved in, and at no point holds, processes, or has access to, any tip funds — the payment passes directly from the Tipper's bank to the Service Worker's bank.",
-      "TipMe does not charge a fee on tips. Service Workers instead pay TipMe a separate subscription fee for use of the platform, disclosed to them at registration and collected by debit order (DebiCheck).",
+      "TipMe does not charge a fee on tips. Service Workers instead pay TipMe a separate subscription fee for use of the platform. Your first month is free, after which the subscription is R20 per month. The subscription is collected in a way that will be communicated to you before the first payment is due, and we will give you notice before any change to the fee.",
       "Because TipMe does not process tip payments, payout timing is determined entirely by the Tipper's and Service Worker's own banks, not by TipMe.",
     ],
   },
@@ -55,9 +55,9 @@ const SECTIONS = [
   {
     title: "8. Privacy and Data Use",
     body: [
-      "TipMe collects the minimum personal information needed to operate the platform: for Service Workers, this includes name, position, a cellphone number used as their PayShap ShapID, and bank account details used solely to collect the Service Worker's own TipMe subscription fee by debit order.",
-      "Personal information is used solely to operate the platform, send transaction notifications, and collect subscription fees. We do not sell personal information to third parties, and we never see or hold tip funds.",
-      "Information may be shared with our SMS notification provider (BulkSMS) and our debit order collection provider, strictly as needed to deliver notifications and collect subscription fees.",
+      "TipMe collects the minimum personal information needed to operate the platform: for Service Workers, this includes name, position, a cellphone number (used both as the login username and as the PayShap ShapID), the name of the bank the ShapID is registered with, and a password-protected login. We do not ask for or store bank account numbers or card details.",
+      "Personal information is used solely to operate the platform, send notifications, and collect subscription fees. We do not sell personal information to third parties, and we never see or hold tip funds.",
+      "Information may be shared with our SMS notification provider (BulkSMS) and with whichever provider we use to collect subscription fees, strictly as needed to deliver notifications and collect those fees.",
       "We process personal information in accordance with South Africa's Protection of Personal Information Act (POPIA). If you wish to access, correct, or request deletion of your personal information, contact jolwage@yahoo.com.",
     ],
   },
@@ -111,7 +111,7 @@ export default function TermsOfUse({ onBack }: Props) {
       <section className="px-4 py-12 max-w-3xl mx-auto">
         <div className="bg-white rounded-xl border border-gray-100 p-6 sm:p-8 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Terms of Use</h1>
-          <p className="text-xs text-gray-400 mb-6">Last updated: 11 October 2026</p>
+          <p className="text-xs text-gray-400 mb-6">Last updated: 22 November 2026</p>
 
           {SECTIONS.map((s) => (
             <div key={s.title} className="mb-6">
