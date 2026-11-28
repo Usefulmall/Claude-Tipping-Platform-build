@@ -19,11 +19,27 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// ─── Secrets ──────────────────────────────────────────────────────────────────
+// A secret can be saved on Render either as an environment variable or as a
+// "Secret File" (which appears at /etc/secrets/<NAME>). Look in both places.
+function getSecret(name) {
+  if (process.env[name]) return process.env[name].trim();
+  for (const dir of ["/etc/secrets", process.cwd(), __dirname]) {
+    try {
+      const value = fs.readFileSync(path.join(dir, name), "utf8").trim();
+      if (value) return value;
+    } catch {
+      // not in this folder, try the next one
+    }
+  }
+  return "";
+}
+
 // ─── BulkSMS helper ───────────────────────────────────────────────────────────
 function sendSms(toNumber, messageBody) {
   return new Promise((resolve, reject) => {
-    const username = process.env.BULKSMS_USERNAME || "";
-    const password = process.env.BULKSMS_PASSWORD || "";
+    const username = getSecret("BULKSMS_USERNAME");
+    const password = getSecret("BULKSMS_PASSWORD");
     if (!username || !password) {
       console.warn("[SMS] BULKSMS credentials not set — skipping SMS");
       return resolve({ skipped: true });
@@ -178,7 +194,7 @@ function startDailyReminderTimer() {
 
 // ─── Health check ──────────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", sms: !!process.env.BULKSMS_USERNAME, reminders: !!process.env.FIREBASE_SERVICE_ACCOUNT });
+  res.json({ status: "ok", sms: !!getSecret("BULKSMS_USERNAME"), reminders: !!process.env.FIREBASE_SERVICE_ACCOUNT });
 });
 
 // ─── Serve built React frontend ────────────────────────────────────────────────
@@ -190,7 +206,7 @@ app.get("*", (_req, res) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[TipMe] Running on port ${PORT}`);
-  console.log(`[TipMe] SMS: ${process.env.BULKSMS_USERNAME ? "✅ configured" : "⚠️  not configured"}`);
+  console.log(`[TipMe] SMS: ${getSecret("BULKSMS_USERNAME") ?"✅ configured" : "⚠️  not configured"}`);
   console.log(`[TipMe] Reminders: ${process.env.FIREBASE_SERVICE_ACCOUNT ? "✅ configured" : "⚠️  not configured"}`);
   if (process.env.FIREBASE_SERVICE_ACCOUNT) startDailyReminderTimer();
 });
