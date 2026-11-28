@@ -5,6 +5,7 @@ import { auth, db } from "../firebase";
 import { AppUser, Worker } from "../types";
 import QrCodeCard from "./QrCodeCard";
 import BankSelect from "./BankSelect";
+import { activeUntil, formatDate, isActive } from "../subscription";
 
 interface Props { user: AppUser; }
 
@@ -102,6 +103,9 @@ export default function EmployerDashboard({ user }: Props) {
                 {workers.map((w) => (
                   <div key={w.id} className="relative">
                     <QrCodeCard worker={w} baseUrl={baseUrl} />
+                    <p className={`mt-1 text-center text-xs font-medium ${isActive(w) ? "text-green-600" : "text-red-500"}`}>
+                      {isActive(w) ? `Active until ${formatDate(activeUntil(w))}` : `Inactive since ${formatDate(activeUntil(w))}`}
+                    </p>
                     <button
                       onClick={async () => {
                         if (confirm(`Remove ${w.name}?`)) await deleteDoc(doc(db, "workers", w.id));

@@ -81,12 +81,21 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isSignedIn() &&
                   (isAdmin() || resource.data.employerId == request.auth.uid);
-      allow create: if isValidWorker(incoming());
+      // A new worker can never arrive with a subscription date or reminder
+      // marker already filled in: they start in the free first month.
+      allow create: if isValidWorker(incoming()) &&
+                    !('paidUntil' in incoming()) &&
+                    !('lastReminder' in incoming());
+      // Only an admin (or the server) may change the subscription fields, so a
+      // worker cannot extend their own QR code.
       allow update: if isSignedIn() &&
                     isValidWorker(incoming()) &&
                     incoming().id == existing().id &&
                     incoming().employerId == existing().employerId &&
-                    incoming().createdAt == existing().createdAt;
+                    incoming().createdAt == existing().createdAt &&
+                    (isAdmin() ||
+                      (incoming().get('paidUntil', null) == existing().get('paidUntil', null) &&
+                       incoming().get('lastReminder', null) == existing().get('lastReminder', null)));
       allow delete: if isSignedIn();
     }
 
